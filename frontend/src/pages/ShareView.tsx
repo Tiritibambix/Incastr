@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getSharedVideo } from '../api/videos'
 import type { VideoPublic } from '../types'
-import VideoPlayer from '../components/VideoPlayer'
 import TagBadge from '../components/TagBadge'
 
 export default function ShareView() {
