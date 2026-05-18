@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     allow_registration: bool = True
     max_scan_depth: int = 10
     scan_interval_minutes: int = 60
+    first_admin_username: str | None = None
+    first_admin_password: str | None = None
+    first_admin_email: str | None = None
 
     class Config:
         env_file = ".env"

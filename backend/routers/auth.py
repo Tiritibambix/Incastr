@@ -24,14 +24,18 @@ async def register(body: UserCreate, db: AsyncSession = Depends(get_db)):
     if existing.scalar_one_or_none():
         raise conflict("Username or email already taken")
 
+    user_count = await db.execute(select(User))
+    is_first_user = user_count.first() is None
+
     user = User(
         username=body.username,
         email=body.email,
         hashed_password=hash_password(body.password),
+        is_admin=is_first_user,
     )
     db.add(user)
     await db.flush()
-    return {"id": user.id, "username": user.username}
+    return {"id": user.id, "username": user.username, "is_admin": user.is_admin}
 
 
 @router.post("/login", response_model=Token)

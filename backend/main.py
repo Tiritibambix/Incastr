@@ -17,9 +17,39 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    await _bootstrap_admin(settings)
     if settings.scan_interval_minutes > 0:
         asyncio.create_task(_auto_scan_loop(settings.scan_interval_minutes))
     yield
+
+
+async def _bootstrap_admin(settings):
+    if not (settings.first_admin_username and settings.first_admin_password and settings.first_admin_email):
+        return
+    import uuid
+
+    from sqlalchemy import select
+
+    from backend.core.auth import hash_password
+    from backend.database import AsyncSessionLocal
+    from backend.models.user import User
+
+    async with AsyncSessionLocal() as db:
+        existing = await db.execute(
+            select(User).where(User.username == settings.first_admin_username)
+        )
+        if existing.scalar_one_or_none():
+            return
+        admin = User(
+            id=str(uuid.uuid4()),
+            username=settings.first_admin_username,
+            email=settings.first_admin_email,
+            hashed_password=hash_password(settings.first_admin_password),
+            is_admin=True,
+        )
+        db.add(admin)
+        await db.commit()
+        logger.info("Bootstrap admin created: %s", settings.first_admin_username)
 
 
 async def _auto_scan_loop(interval_minutes: int):

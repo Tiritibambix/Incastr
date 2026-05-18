@@ -17,6 +17,10 @@ services:
       - THUMBS_DIR=/data/thumbs
       - ACCESS_TOKEN_EXPIRE_MINUTES=60
       - ALLOW_REGISTRATION=true
+      # Bootstrap admin on first startup — remove after first run
+      # - FIRST_ADMIN_USERNAME=admin
+      # - FIRST_ADMIN_PASSWORD=changeme
+      # - FIRST_ADMIN_EMAIL=admin@example.com
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
