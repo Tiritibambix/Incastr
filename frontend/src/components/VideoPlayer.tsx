@@ -16,7 +16,7 @@ export default function VideoPlayer({ src, mimeType, poster }: Props) {
     <video
       ref={videoRef}
       controls
-      className="w-full rounded-lg bg-black"
+      className="block mx-auto w-auto max-w-full max-h-[calc(100vh-5rem)] rounded-lg bg-black"
       poster={poster ?? undefined}
       preload="metadata"
     >
