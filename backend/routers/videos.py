@@ -208,6 +208,7 @@ async def remove_tag_from_video(
 @router.delete("/{video_id}", status_code=204)
 async def delete_video(
     video_id: str,
+    delete_file: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -217,7 +218,14 @@ async def delete_video(
     video = result.scalar_one_or_none()
     if not video:
         raise not_found("Video not found")
+    filepath = video.filepath if delete_file else None
     await db.delete(video)
+    await db.flush()
+    if filepath:
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
 
 
 @router.get("/{video_id}/stream")

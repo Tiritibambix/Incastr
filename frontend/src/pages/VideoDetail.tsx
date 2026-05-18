@@ -21,6 +21,9 @@ export default function VideoDetail() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteFromDisk, setDeleteFromDisk] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -64,9 +67,10 @@ export default function VideoDetail() {
     setNewTagName('')
   }
 
-  const handleDelete = async () => {
-    if (!video || !confirm('Delete this video from the library?')) return
-    await deleteVideo(video.id)
+  const handleDeleteConfirm = async () => {
+    if (!video) return
+    setDeleting(true)
+    await deleteVideo(video.id, deleteFromDisk)
     navigate('/')
   }
 
@@ -148,7 +152,10 @@ export default function VideoDetail() {
                   {copied ? 'Copied!' : 'Copy share link'}
                 </button>
               )}
-              <button onClick={handleDelete} className="px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
+              <button
+                onClick={() => { setDeleteFromDisk(false); setShowDeleteModal(true) }}
+                className="px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+              >
                 Delete
               </button>
             </div>
@@ -190,6 +197,45 @@ export default function VideoDetail() {
           </div>
         </div>
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Delete video</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Remove <span className="font-medium text-gray-700">{video.title}</span> from your library?
+            </p>
+            <label className="flex items-start gap-3 mb-6 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteFromDisk}
+                onChange={(e) => setDeleteFromDisk(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+              />
+              <span className="text-sm text-gray-700">
+                Also delete from hard drive.{' '}
+                <span className="text-red-600 font-medium">This can't be undone.</span>
+              </span>
+            </label>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -12,7 +12,8 @@ export const getSharedVideo = (token: string) =>
 export const updateVideo = (id: string, data: { title?: string; description?: string; visibility?: Visibility }) =>
   client.patch<Video>(`/videos/${id}`, data)
 
-export const deleteVideo = (id: string) => client.delete(`/videos/${id}`)
+export const deleteVideo = (id: string, deleteFile = false) =>
+  client.delete(`/videos/${id}`, { params: deleteFile ? { delete_file: true } : undefined })
 
 export const addTag = (videoId: string, tagId: string) =>
   client.post<Video>(`/videos/${videoId}/tags/${tagId}`)
