@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, Enum as SAEnum, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
