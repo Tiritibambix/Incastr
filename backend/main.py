@@ -3,9 +3,9 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import get_settings
@@ -101,8 +101,20 @@ def create_app() -> FastAPI:
     if static_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
 
-        @app.get("/{full_path:path}")
-        async def spa_fallback(full_path: str):
+        # Serve favicon and other root-level static files
+        for static_file in ("favicon.ico", "favicon.svg", "robots.txt"):
+            if (static_dir / static_file).exists():
+                _path = static_file
+
+                @app.get(f"/{_path}")
+                async def _serve_static(p=_path):
+                    return FileResponse(str(static_dir / p))
+
+        @app.exception_handler(404)
+        async def spa_fallback(request: Request, exc: Exception):
+            # Let API 404s return JSON
+            if request.url.path.startswith("/api"):
+                return JSONResponse({"detail": "Not found"}, status_code=404)
             return FileResponse(str(static_dir / "index.html"))
 
     return app
