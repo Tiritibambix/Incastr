@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "PowerShell(Get-ChildItem -Recurse \"C:\\\\Users\\\\Steph\\\\Documents\\\\GitHub\\\\Incastr\" -Exclude \"node_modules\",\"__pycache__\",\".git\" | Where-Object { -not $_.FullName.Contains\\(\"node_modules\"\\) -and -not $_.FullName.Contains\\(\".git\"\\) } | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\Users\\\\Steph\\\\Documents\\\\GitHub\\\\Incastr\\\\\",\"\"\\) } | Sort-Object)",
-      "PowerShell(Move-Item \"C:\\\\Users\\\\Steph\\\\Documents\\\\GitHub\\\\Incastr\\\\backend\\\\alembic.ini\" \"C:\\\\Users\\\\Steph\\\\Documents\\\\GitHub\\\\Incastr\\\\alembic.ini\")"
+      "PowerShell(Move-Item \"C:\\\\Users\\\\Steph\\\\Documents\\\\GitHub\\\\Incastr\\\\backend\\\\alembic.ini\" \"C:\\\\Users\\\\Steph\\\\Documents\\\\GitHub\\\\Incastr\\\\alembic.ini\")",
+      "Bash(curl -s https://api.github.com/repos/actions/setup-node/tags)",
+      "Bash(curl -s https://api.github.com/repos/actions/setup-python/tags)",
+      "Bash(curl -s \"https://api.github.com/repos/actions/setup-python/tags?per_page=100\")",
+      "Bash(curl -s \"https://api.github.com/repos/actions/setup-node/tags?per_page=100\")",
+      "Bash(curl -s https://api.github.com/repos/actions/setup-python/git/ref/tags/v5.6.0)"
     ]
   }
 }
