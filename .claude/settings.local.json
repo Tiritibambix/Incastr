@@ -7,7 +7,8 @@
       "Bash(curl -s https://api.github.com/repos/actions/setup-python/tags)",
       "Bash(curl -s \"https://api.github.com/repos/actions/setup-python/tags?per_page=100\")",
       "Bash(curl -s \"https://api.github.com/repos/actions/setup-node/tags?per_page=100\")",
-      "Bash(curl -s https://api.github.com/repos/actions/setup-python/git/ref/tags/v5.6.0)"
+      "Bash(curl -s https://api.github.com/repos/actions/setup-python/git/ref/tags/v5.6.0)",
+      "Bash(npm install *)"
     ]
   }
 }
