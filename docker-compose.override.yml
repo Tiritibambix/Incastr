@@ -1,0 +1,17 @@
+services:
+  incastr:
+    build: .
+    image: incastr:local
+    ports:
+      - "8420:8000"
+    volumes:
+      - ./data:/data
+      - ./data/thumbs:/data/thumbs
+      # mount your local video folders here for development:
+      # - /path/to/your/videos:/media/videos:ro
+    environment:
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - DATABASE_URL=sqlite+aiosqlite:////data/incastr.db
+      - THUMBS_DIR=/data/thumbs
+      - ALLOW_REGISTRATION=true
+      - SCAN_INTERVAL_MINUTES=0
