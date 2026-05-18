@@ -8,15 +8,17 @@ services:
     volumes:
       - /srv/dev-disk-by-uuid-XXXX/Incastr/config:/data
       - /srv/dev-disk-by-uuid-XXXX/Incastr/thumbs:/data/thumbs
-      # video folders mounted read-only — users configure paths via UI
-      # add as many as needed:
-      # - /srv/dev-disk-by-uuid-XXXX/Videos:/media/videos:ro
+      # Mount your video folder here, then set MEDIA_DIR below.
+      # Remove :ro if you want Incastr to be able to delete files from disk.
+      # - /srv/dev-disk-by-uuid-XXXX/Videos:/media/videos
     environment:
       - SECRET_KEY=changeme
       - DATABASE_URL=sqlite+aiosqlite:////data/incastr.db
       - THUMBS_DIR=/data/thumbs
       - ACCESS_TOKEN_EXPIRE_MINUTES=60
       - ALLOW_REGISTRATION=true
+      # Auto-configure video folder on startup (no Settings UI needed)
+      # - MEDIA_DIR=/media/videos
       # Bootstrap admin on first startup — remove after first run
       # - FIRST_ADMIN_USERNAME=admin
       # - FIRST_ADMIN_PASSWORD=changeme

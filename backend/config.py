@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     first_admin_username: str | None = None
     first_admin_password: str | None = None
     first_admin_email: str | None = None
+    media_dir: str | None = None
 
     class Config:
         env_file = ".env"

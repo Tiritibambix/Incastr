@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     settings = get_settings()
     await _bootstrap_admin(settings)
+    await _bootstrap_media_dir(settings)
     if settings.scan_interval_minutes > 0:
         asyncio.create_task(_auto_scan_loop(settings.scan_interval_minutes))
     yield
@@ -50,6 +51,42 @@ async def _bootstrap_admin(settings):
         db.add(admin)
         await db.commit()
         logger.info("Bootstrap admin created: %s", settings.first_admin_username)
+
+
+async def _bootstrap_media_dir(settings):
+    if not settings.media_dir:
+        return
+    import uuid
+    from pathlib import Path as SysPath
+
+    from sqlalchemy import select
+
+    from backend.database import AsyncSessionLocal
+    from backend.models.folder import Folder
+    from backend.models.user import User
+
+    if not SysPath(settings.media_dir).is_dir():
+        logger.warning("MEDIA_DIR %s does not exist or is not a directory", settings.media_dir)
+        return
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(User).where(User.is_admin == True))  # noqa: E712
+        admins = result.scalars().all()
+        for admin in admins:
+            existing = await db.execute(
+                select(Folder).where(Folder.user_id == admin.id, Folder.path == settings.media_dir)
+            )
+            if existing.scalar_one_or_none():
+                continue
+            db.add(Folder(
+                id=str(uuid.uuid4()),
+                user_id=admin.id,
+                path=settings.media_dir,
+                label="Videos",
+            ))
+            logger.info("Auto-configured MEDIA_DIR %s for admin %s", settings.media_dir, admin.username)
+        await db.commit()
+
 
 
 async def _auto_scan_loop(interval_minutes: int):
