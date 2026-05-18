@@ -13,7 +13,7 @@ from backend.models.folder import Folder
 from backend.models.video import Video
 from backend.services.thumbnail import generate_thumbnail, get_video_metadata
 
-VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
+VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v", ".ts", ".flv", ".wmv", ".mpg", ".mpeg", ".m2ts", ".mts"}
 
 
 async def scan_folder(
