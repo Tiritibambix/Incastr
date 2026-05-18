@@ -82,11 +82,27 @@ export default function VideoDetail() {
     }
   }
 
-  const handleCopyShare = () => {
+  const handleCopyShare = async () => {
     if (!video) return
-    navigator.clipboard.writeText(`${window.location.origin}/share/${video.share_token}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    const url = `${window.location.origin}/share/${video.share_token}`
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url)
+      } else {
+        const el = document.createElement('textarea')
+        el.value = url
+        el.setAttribute('readonly', '')
+        el.style.cssText = 'position:fixed;top:-9999px;left:-9999px'
+        document.body.appendChild(el)
+        el.select()
+        document.execCommand('copy')
+        document.body.removeChild(el)
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      // ignore
+    }
   }
 
   if (loading) {
@@ -156,8 +172,15 @@ export default function VideoDetail() {
                 Edit
               </button>
               {video.visibility === 'unlisted' && (
-                <button onClick={handleCopyShare} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-                  {copied ? 'Copied!' : 'Copy share link'}
+                <button
+                  onClick={handleCopyShare}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-all duration-300 ${
+                    copied
+                      ? 'bg-green-100 text-green-700 border-green-300 scale-105'
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {copied ? '✓ Copied!' : 'Copy share link'}
                 </button>
               )}
               <button

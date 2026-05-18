@@ -37,7 +37,7 @@ export default function Login() {
       setToken(data.access_token)
       const { data: user } = await getMe()
       setUser(user)
-      navigate('/')
+      navigate('/library')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       setError(msg ?? 'Something went wrong')

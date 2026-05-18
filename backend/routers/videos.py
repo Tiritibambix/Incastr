@@ -42,6 +42,40 @@ router = APIRouter(prefix="/api/videos", tags=["videos"])
 CHUNK_SIZE = 1024 * 1024  # 1 MB
 
 
+@router.get("/public", response_model=list[VideoPublic])
+async def list_public_videos(
+    q: str | None = None,
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = (
+        select(Video)
+        .where(Video.visibility == Visibility.public, ~Video.is_missing)
+        .options(selectinload(Video.tags))
+        .order_by(Video.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    if q:
+        stmt = stmt.where(Video.title.ilike(f"%{q}%"))
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+@router.get("/public/{video_id}", response_model=VideoPublic)
+async def get_public_video(video_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Video)
+        .where(Video.id == video_id, Video.visibility == Visibility.public)
+        .options(selectinload(Video.tags))
+    )
+    video = result.scalar_one_or_none()
+    if not video:
+        raise not_found("Video not found")
+    return video
+
+
 @router.get("", response_model=list[VideoOut])
 async def list_videos(
     q: str | None = None,
@@ -240,11 +274,26 @@ async def stream_video(
     db: AsyncSession = Depends(get_db),
     credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
 ):
-    current_user = await _resolve_stream_user(token, credentials, db)
-    result = await db.execute(
-        select(Video).where(Video.id == video_id, Video.user_id == current_user.id)
-    )
-    video = result.scalar_one_or_none()
+    raw = (credentials.credentials if credentials else None) or token
+    video = None
+
+    if raw:
+        user_id = decode_token(raw)
+        if user_id:
+            result = await db.execute(select(User).where(User.id == user_id))
+            current_user = result.scalar_one_or_none()
+            if current_user:
+                result = await db.execute(
+                    select(Video).where(Video.id == video_id, Video.user_id == current_user.id)
+                )
+                video = result.scalar_one_or_none()
+
+    if video is None:
+        result = await db.execute(
+            select(Video).where(Video.id == video_id, Video.visibility == Visibility.public)
+        )
+        video = result.scalar_one_or_none()
+
     if not video:
         raise not_found("Video not found")
 

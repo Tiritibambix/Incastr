@@ -14,7 +14,7 @@ export default function Navbar() {
     <nav className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between">
       <Link to="/" className="text-xl font-bold tracking-tight text-indigo-400">Incastr</Link>
       <div className="flex items-center gap-4">
-        <Link to="/" className="text-sm hover:text-indigo-300">Library</Link>
+        <Link to="/library" className="text-sm hover:text-indigo-300">Library</Link>
         <Link to="/settings" className="text-sm hover:text-indigo-300">Settings</Link>
         {user?.is_admin && (
           <Link to="/admin" className="text-sm hover:text-indigo-300">Admin</Link>

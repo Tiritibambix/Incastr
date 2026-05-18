@@ -46,10 +46,13 @@ export interface Video {
 
 export interface VideoPublic {
   id: string
+  user_id: string
   title: string
   description: string | null
   category: string | null
+  visibility: Visibility
   thumbnail_path: string | null
   duration_seconds: number | null
+  mime_type: string | null
   tags: Tag[]
 }

@@ -38,11 +38,14 @@ class VideoOut(BaseModel):
 
 class VideoPublic(BaseModel):
     id: str
+    user_id: str
     title: str
     description: str | None
     category: str | None
+    visibility: Visibility
     thumbnail_path: str | None
     duration_seconds: int | None
+    mime_type: str | None
     tags: list[TagOut] = []
 
     model_config = {"from_attributes": True}

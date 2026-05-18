@@ -9,6 +9,12 @@ export const getVideo = (id: string) => client.get<Video>(`/videos/${id}`)
 export const getSharedVideo = (token: string) =>
   client.get<VideoPublic>(`/videos/share/${token}`)
 
+export const listPublicVideos = (q?: string) =>
+  client.get<VideoPublic[]>('/videos/public', { params: q ? { q } : undefined })
+
+export const getPublicVideo = (id: string) =>
+  client.get<VideoPublic>(`/videos/public/${id}`)
+
 export const updateVideo = (id: string, data: { title?: string; description?: string; visibility?: Visibility }) =>
   client.patch<Video>(`/videos/${id}`, data)
 
