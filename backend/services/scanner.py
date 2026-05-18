@@ -49,7 +49,7 @@ async def scan_folder(
         nonlocal added, updated, scanned
         scanned += 1
         rel = filepath.relative_to(root)
-        category = str(rel.parent) if str(rel.parent) != "." else None
+        category = rel.parts[0] if len(rel.parts) > 1 else None
         fp_str = str(filepath)
 
         result = await db.execute(
