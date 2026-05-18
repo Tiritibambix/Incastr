@@ -49,9 +49,9 @@ export default function VideoCard({ video }: Props) {
         {video.category && (
           <p className="text-xs text-gray-500 mt-1 truncate">{video.category}</p>
         )}
-        {video.tags.length > 0 && (
+        {(video.tags ?? []).length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
-            {video.tags.slice(0, 3).map((t) => (
+            {(video.tags ?? []).slice(0, 3).map((t) => (
               <TagBadge key={t.id} name={t.name} />
             ))}
           </div>

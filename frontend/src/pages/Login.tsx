@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login, register, getMe } from '../api/auth'
+import { getAuthStatus, getMe, login, register } from '../api/auth'
 import { useAuthStore } from '../store/auth'
 
 export default function Login() {
@@ -10,8 +10,20 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isFirstRun, setIsFirstRun] = useState(false)
   const { setToken, setUser } = useAuthStore()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    getAuthStatus()
+      .then(({ data }) => {
+        if (!data.has_users) {
+          setIsFirstRun(true)
+          setMode('register')
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +50,13 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
         <h1 className="text-2xl font-bold text-center text-indigo-600 mb-6">Incastr</h1>
+
+        {isFirstRun && (
+          <div className="mb-4 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-700">
+            First run — create your admin account below.
+          </div>
+        )}
+
         <div className="flex mb-6 border-b">
           <button
             className={`flex-1 pb-2 text-sm font-medium ${mode === 'login' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
@@ -52,6 +71,7 @@ export default function Login() {
             Register
           </button>
         </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Username</label>

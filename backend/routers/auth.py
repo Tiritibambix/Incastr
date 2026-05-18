@@ -12,6 +12,14 @@ from backend.schemas.user import LoginRequest, Token, UserCreate
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
+@router.get("/status")
+async def auth_status(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User))
+    has_users = result.first() is not None
+    settings = get_settings()
+    return {"has_users": has_users, "registration_open": settings.allow_registration}
+
+
 @router.post("/register", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def register(body: UserCreate, db: AsyncSession = Depends(get_db)):
     settings = get_settings()

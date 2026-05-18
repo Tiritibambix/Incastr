@@ -14,7 +14,7 @@ export default function Home() {
     setError('')
     try {
       const { data } = await listVideos(q ? { q, field: field || undefined } : undefined)
-      setVideos(data)
+      setVideos(Array.isArray(data) ? data : [])
     } catch {
       setError('Failed to load videos')
     } finally {

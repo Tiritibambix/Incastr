@@ -86,7 +86,7 @@ export default function VideoDetail() {
   }
   if (!video) return <p className="text-center py-20 text-gray-500">Video not found</p>
 
-  const unattachedTags = allTags.filter((t) => !video.tags.find((vt) => vt.id === t.id))
+  const unattachedTags = allTags.filter((t) => !(video.tags ?? []).find((vt) => vt.id === t.id))
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -158,7 +158,7 @@ export default function VideoDetail() {
         <div>
           <p className="text-sm font-medium text-gray-700 mb-2">Tags</p>
           <div className="flex flex-wrap gap-1 mb-3">
-            {video.tags.map((t) => (
+            {(video.tags ?? []).map((t) => (
               <TagBadge key={t.id} name={t.name} onRemove={() => handleRemoveTag(t.id)} />
             ))}
           </div>
