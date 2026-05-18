@@ -24,6 +24,7 @@ export default function VideoDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteFromDisk, setDeleteFromDisk] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     if (!id) return
@@ -70,8 +71,15 @@ export default function VideoDetail() {
   const handleDeleteConfirm = async () => {
     if (!video) return
     setDeleting(true)
-    await deleteVideo(video.id, deleteFromDisk)
-    navigate('/')
+    setDeleteError('')
+    try {
+      await deleteVideo(video.id, deleteFromDisk)
+      navigate('/')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setDeleteError(msg ?? 'Delete failed')
+      setDeleting(false)
+    }
   }
 
   const handleCopyShare = () => {
@@ -153,7 +161,7 @@ export default function VideoDetail() {
                 </button>
               )}
               <button
-                onClick={() => { setDeleteFromDisk(false); setShowDeleteModal(true) }}
+                onClick={() => { setDeleteFromDisk(false); setDeleteError(''); setShowDeleteModal(true) }}
                 className="px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
               >
                 Delete
@@ -217,6 +225,9 @@ export default function VideoDetail() {
                 <span className="text-red-600 font-medium">This can't be undone.</span>
               </span>
             </label>
+            {deleteError && (
+              <p className="text-sm text-red-600 mb-3">{deleteError}</p>
+            )}
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowDeleteModal(false)}

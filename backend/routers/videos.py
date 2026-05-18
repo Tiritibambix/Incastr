@@ -218,14 +218,18 @@ async def delete_video(
     video = result.scalar_one_or_none()
     if not video:
         raise not_found("Video not found")
-    filepath = video.filepath if delete_file else None
-    await db.delete(video)
-    await db.flush()
-    if filepath:
+    if delete_file:
         try:
-            os.remove(filepath)
-        except OSError:
-            pass
+            os.remove(video.filepath)
+        except FileNotFoundError:
+            pass  # already gone, proceed
+        except OSError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot delete file from disk: {exc.strerror}. "
+                       "Make sure the volume is not mounted read-only (:ro).",
+            )
+    await db.delete(video)
 
 
 @router.get("/{video_id}/stream")
