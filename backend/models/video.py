@@ -3,7 +3,8 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Enum as SAEnum, String
+import sqlalchemy as sa
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
@@ -32,7 +33,7 @@ class Video(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)
     category: Mapped[str | None] = mapped_column(String, nullable=True)
-    visibility: Mapped[Visibility] = mapped_column(SAEnum(Visibility), default=Visibility.private)
+    visibility: Mapped[Visibility] = mapped_column(sa.Enum(Visibility), default=Visibility.private)
     share_token: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     thumbnail_path: Mapped[str | None] = mapped_column(String, nullable=True)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
