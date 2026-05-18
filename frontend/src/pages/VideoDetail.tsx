@@ -29,7 +29,7 @@ export default function VideoDetail() {
       setTitle(v.title)
       setDescription(v.description ?? '')
       setVisibility(v.visibility)
-      setAllTags(tags)
+      setAllTags(Array.isArray(tags) ? tags : [])
       setLoading(false)
     })
   }, [id])

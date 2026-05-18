@@ -11,7 +11,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    listFolders().then(({ data }) => setFolders(data))
+    listFolders().then(({ data }) => setFolders(Array.isArray(data) ? data : []))
   }, [])
 
   const handleAddFolder = async (e: React.FormEvent) => {

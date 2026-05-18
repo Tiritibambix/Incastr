@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.auth import hash_password
 from backend.core.dependencies import get_current_admin, get_current_user
-from backend.core.exceptions import not_found
+from backend.core.exceptions import bad_request, not_found
 from backend.database import get_db
 from backend.models.user import User
 from backend.schemas.user import UserOut, UserUpdate
@@ -44,12 +44,14 @@ async def update_user(
     user_id: str,
     body: UserUpdate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_admin),
+    admin: User = Depends(get_current_admin),
 ):
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
         raise not_found("User not found")
+    if body.is_admin is False and user_id == admin.id:
+        raise bad_request("Cannot revoke your own admin status")
     if body.email is not None:
         user.email = body.email
     if body.password is not None:
@@ -63,8 +65,10 @@ async def update_user(
 async def delete_user(
     user_id: str,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_admin),
+    admin: User = Depends(get_current_admin),
 ):
+    if user_id == admin.id:
+        raise bad_request("Cannot delete your own account")
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
