@@ -1,17 +1,18 @@
 import os
-from pathlib import Path
-from fastapi import APIRouter, Depends, Request, Response, status
+
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+from backend.core.dependencies import get_current_user
+from backend.core.exceptions import not_found
 from backend.database import get_db
+from backend.models.tag import Tag
 from backend.models.user import User
 from backend.models.video import Video, Visibility
-from backend.models.tag import Tag
-from backend.schemas.video import VideoOut, VideoUpdate, VideoPublic
-from backend.core.dependencies import get_current_user
-from backend.core.exceptions import not_found, forbidden
+from backend.schemas.video import VideoOut, VideoPublic, VideoUpdate
 from backend.services.search import search_videos
 
 router = APIRouter(prefix="/api/videos", tags=["videos"])

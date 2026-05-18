@@ -1,7 +1,7 @@
 import asyncio
 import os
-import subprocess
 from pathlib import Path
+
 from backend.config import get_settings
 
 

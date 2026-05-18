@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from backend.database import get_db
-from backend.models.user import User
-from backend.models.tag import Tag
-from backend.schemas.tag import TagCreate, TagOut
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.core.dependencies import get_current_user
-from backend.core.exceptions import not_found, conflict
+from backend.core.exceptions import conflict, not_found
+from backend.database import get_db
+from backend.models.tag import Tag
+from backend.models.user import User
+from backend.schemas.tag import TagCreate, TagOut
 
 router = APIRouter(prefix="/api/tags", tags=["tags"])
 

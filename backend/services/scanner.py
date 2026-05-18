@@ -3,13 +3,15 @@ import secrets
 import uuid
 from datetime import datetime
 from pathlib import Path
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+
 from fastapi import BackgroundTasks
-from backend.models.video import Video
-from backend.models.folder import Folder
-from backend.services.thumbnail import generate_thumbnail, get_video_metadata
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.config import get_settings
+from backend.models.folder import Folder
+from backend.models.video import Video
+from backend.services.thumbnail import generate_thumbnail, get_video_metadata
 
 VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
 
@@ -88,7 +90,6 @@ async def scan_folder(
     for filepath in _walk(root, 0):
         await _process(filepath)
 
-    # Mark missing
     result = await db.execute(
         select(Video).where(Video.folder_id == folder.id, Video.user_id == folder.user_id)
     )
@@ -100,7 +101,10 @@ async def scan_folder(
 
 
 async def _generate_thumb_and_update(filepath: str, user_id: str, video_id: str):
+    from sqlalchemy import select
+
     from backend.database import AsyncSessionLocal
+
     thumb_path = await generate_thumbnail(filepath, user_id, video_id)
     if thumb_path:
         async with AsyncSessionLocal() as session:

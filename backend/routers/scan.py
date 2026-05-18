@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy import select
-from backend.database import get_db
-from backend.models.user import User
-from backend.models.folder import Folder
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.core.dependencies import get_current_user
 from backend.core.exceptions import not_found
+from backend.database import get_db
+from backend.models.folder import Folder
+from backend.models.user import User
 from backend.services.scanner import scan_folder
 
 router = APIRouter(prefix="/api/scan", tags=["scan"])

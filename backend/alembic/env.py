@@ -1,16 +1,17 @@
 import asyncio
 from logging.config import fileConfig
+
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from alembic import context
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from backend.database import Base
-from backend.models import User, Folder, Tag, Video  # noqa: F401
+from backend.database import Base  # noqa: E402
+from backend.models import Folder, Tag, User, Video  # noqa: E402, F401
 
 target_metadata = Base.metadata
 

@@ -1,8 +1,15 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, ForeignKey, DateTime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from backend.database import Base
+
+if TYPE_CHECKING:
+    from backend.models.user import User
+    from backend.models.video import Video
 
 
 class Folder(Base):

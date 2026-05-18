@@ -1,7 +1,14 @@
 import uuid
-from sqlalchemy import String, ForeignKey, Table, Column
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Column, ForeignKey, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from backend.database import Base
+
+if TYPE_CHECKING:
+    from backend.models.user import User
+    from backend.models.video import Video
 
 
 video_tags = Table(

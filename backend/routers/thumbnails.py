@@ -1,14 +1,15 @@
 from pathlib import Path
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.core.dependencies import get_current_user
+from backend.core.exceptions import not_found
 from backend.database import get_db
 from backend.models.user import User
 from backend.models.video import Video
-from backend.core.dependencies import get_current_user
-from backend.core.exceptions import not_found
-from backend.config import get_settings
 
 router = APIRouter(prefix="/api/thumbnails", tags=["thumbnails"])
 

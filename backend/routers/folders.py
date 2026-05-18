@@ -1,13 +1,15 @@
 import os
+
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from backend.database import get_db
-from backend.models.user import User
-from backend.models.folder import Folder
-from backend.schemas.folder import FolderCreate, FolderUpdate, FolderOut
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.core.dependencies import get_current_user
-from backend.core.exceptions import not_found, bad_request
+from backend.core.exceptions import bad_request, not_found
+from backend.database import get_db
+from backend.models.folder import Folder
+from backend.models.user import User
+from backend.schemas.folder import FolderCreate, FolderOut, FolderUpdate
 
 router = APIRouter(prefix="/api/folders", tags=["folders"])
 

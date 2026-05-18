@@ -1,10 +1,20 @@
+import enum
 import uuid
 from datetime import datetime
-from sqlalchemy import String, ForeignKey, DateTime, Integer, Enum as SAEnum
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from backend.database import Base
 from backend.models.tag import video_tags
-import enum
+
+if TYPE_CHECKING:
+    from backend.models.folder import Folder
+    from backend.models.tag import Tag
+    from backend.models.user import User
 
 
 class Visibility(str, enum.Enum):

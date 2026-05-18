@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.core.auth import hash_password
+from backend.core.dependencies import get_current_admin, get_current_user
+from backend.core.exceptions import not_found
 from backend.database import get_db
 from backend.models.user import User
 from backend.schemas.user import UserOut, UserUpdate
-from backend.core.dependencies import get_current_user, get_current_admin
-from backend.core.auth import hash_password
-from backend.core.exceptions import not_found
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -29,7 +30,6 @@ async def update_me(
     return current_user
 
 
-# Admin routes
 @router.get("/", response_model=list[UserOut])
 async def list_users(
     db: AsyncSession = Depends(get_db),

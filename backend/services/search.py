@@ -1,8 +1,9 @@
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
-from backend.models.video import Video
+
 from backend.models.tag import Tag, video_tags
+from backend.models.video import Video
 
 
 async def search_videos(
@@ -16,7 +17,7 @@ async def search_videos(
 ) -> list[Video]:
     stmt = (
         select(Video)
-        .where(Video.user_id == user_id, Video.is_missing == False)
+        .where(Video.user_id == user_id, ~Video.is_missing)
         .options(selectinload(Video.tags))
     )
 

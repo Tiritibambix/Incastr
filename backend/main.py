@@ -2,13 +2,14 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-from backend.routers import auth, users, videos, folders, tags, scan, thumbnails
 from backend.config import get_settings
+from backend.routers import auth, folders, scan, tags, thumbnails, users, videos
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +23,20 @@ async def lifespan(app: FastAPI):
 
 
 async def _auto_scan_loop(interval_minutes: int):
+    from fastapi import BackgroundTasks
+    from sqlalchemy import select
+
     from backend.database import AsyncSessionLocal
     from backend.models.folder import Folder
     from backend.services.scanner import scan_folder
-    from sqlalchemy import select
-    from fastapi import BackgroundTasks
 
     while True:
         await asyncio.sleep(interval_minutes * 60)
         try:
             async with AsyncSessionLocal() as db:
                 result = await db.execute(select(Folder))
-                folders = result.scalars().all()
-                for folder in folders:
+                folder_list = result.scalars().all()
+                for folder in folder_list:
                     bt = BackgroundTasks()
                     await scan_folder(folder, db, bt)
                 await db.commit()

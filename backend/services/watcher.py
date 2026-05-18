@@ -1,8 +1,9 @@
 import asyncio
 import logging
 from pathlib import Path
+
+from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileCreatedEvent, FileMovedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +34,12 @@ class VideoEventHandler(FileSystemEventHandler):
                 )
 
     async def _handle_new_file(self, filepath: str):
-        from backend.database import AsyncSessionLocal
-        from backend.models.video import Video
-        from backend.models.folder import Folder
-        from backend.services.scanner import scan_folder
         from fastapi import BackgroundTasks
         from sqlalchemy import select
+
+        from backend.database import AsyncSessionLocal
+        from backend.models.folder import Folder
+        from backend.services.scanner import scan_folder
 
         async with AsyncSessionLocal() as db:
             result = await db.execute(select(Folder).where(Folder.id == self.folder_id))

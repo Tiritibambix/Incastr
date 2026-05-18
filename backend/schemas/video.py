@@ -1,5 +1,7 @@
 from datetime import datetime
+
 from pydantic import BaseModel
+
 from backend.models.video import Visibility
 from backend.schemas.tag import TagOut
 
