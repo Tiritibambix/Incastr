@@ -12,7 +12,7 @@ from backend.services.scanner import scan_folder
 router = APIRouter(prefix="/api/scan", tags=["scan"])
 
 
-@router.post("/", response_model=dict)
+@router.post("", response_model=dict)
 async def scan_all(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),

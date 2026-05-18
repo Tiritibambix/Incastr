@@ -1,11 +1,13 @@
 import os
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from backend.core.auth import decode_token
 from backend.core.dependencies import get_current_user
 from backend.core.exceptions import not_found
 from backend.database import get_db
@@ -15,12 +17,32 @@ from backend.models.video import Video, Visibility
 from backend.schemas.video import VideoOut, VideoPublic, VideoUpdate
 from backend.services.search import search_videos
 
+_optional_bearer = HTTPBearer(auto_error=False)
+
+
+async def _resolve_stream_user(
+    token: str | None,
+    credentials: HTTPAuthorizationCredentials | None,
+    db: AsyncSession,
+) -> User:
+    raw = (credentials.credentials if credentials else None) or token
+    if not raw:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = decode_token(raw)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
 router = APIRouter(prefix="/api/videos", tags=["videos"])
 
 CHUNK_SIZE = 1024 * 1024  # 1 MB
 
 
-@router.get("/", response_model=list[VideoOut])
+@router.get("", response_model=list[VideoOut])
 async def list_videos(
     q: str | None = None,
     field: str | None = None,
@@ -202,9 +224,11 @@ async def delete_video(
 async def stream_video(
     video_id: str,
     request: Request,
+    token: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
 ):
+    current_user = await _resolve_stream_user(token, credentials, db)
     result = await db.execute(
         select(Video).where(Video.id == video_id, Video.user_id == current_user.id)
     )

@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { useAuthStore } from '../store/auth'
 
 interface Props {
   src: string
@@ -8,6 +9,8 @@ interface Props {
 
 export default function VideoPlayer({ src, mimeType, poster }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const { token } = useAuthStore()
+  const srcWithToken = token ? `${src}?token=${encodeURIComponent(token)}` : src
 
   return (
     <video
@@ -17,7 +20,7 @@ export default function VideoPlayer({ src, mimeType, poster }: Props) {
       poster={poster ?? undefined}
       preload="metadata"
     >
-      <source src={src} type={mimeType ?? 'video/mp4'} />
+      <source src={srcWithToken} type={mimeType ?? 'video/mp4'} />
       Your browser does not support HTML5 video.
     </video>
   )

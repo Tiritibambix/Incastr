@@ -30,7 +30,7 @@ async def update_me(
     return current_user
 
 
-@router.get("/", response_model=list[UserOut])
+@router.get("", response_model=list[UserOut])
 async def list_users(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_admin),

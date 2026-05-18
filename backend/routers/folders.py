@@ -14,7 +14,7 @@ from backend.schemas.folder import FolderCreate, FolderOut, FolderUpdate
 router = APIRouter(prefix="/api/folders", tags=["folders"])
 
 
-@router.get("/", response_model=list[FolderOut])
+@router.get("", response_model=list[FolderOut])
 async def list_folders(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -23,7 +23,7 @@ async def list_folders(
     return list(result.scalars().all())
 
 
-@router.post("/", response_model=FolderOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=FolderOut, status_code=status.HTTP_201_CREATED)
 async def create_folder(
     body: FolderCreate,
     db: AsyncSession = Depends(get_db),

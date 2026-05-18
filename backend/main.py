@@ -75,7 +75,7 @@ async def _auto_scan_loop(interval_minutes: int):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Incastr", lifespan=lifespan)
+    app = FastAPI(title="Incastr", lifespan=lifespan, redirect_slashes=False)
 
     app.add_middleware(
         CORSMiddleware,

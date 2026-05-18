@@ -12,7 +12,7 @@ from backend.schemas.tag import TagCreate, TagOut
 router = APIRouter(prefix="/api/tags", tags=["tags"])
 
 
-@router.get("/", response_model=list[TagOut])
+@router.get("", response_model=list[TagOut])
 async def list_tags(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -21,7 +21,7 @@ async def list_tags(
     return list(result.scalars().all())
 
 
-@router.post("/", response_model=TagOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TagOut, status_code=status.HTTP_201_CREATED)
 async def create_tag(
     body: TagCreate,
     db: AsyncSession = Depends(get_db),
