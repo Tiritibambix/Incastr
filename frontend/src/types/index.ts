@@ -44,6 +44,14 @@ export interface Video {
   tags: Tag[]
 }
 
+export interface CategoryShare {
+  token: string
+  category: string
+  enabled: boolean
+  expires_at: string | null
+  created_at: string
+}
+
 export interface VideoPublic {
   id: string
   user_id: string

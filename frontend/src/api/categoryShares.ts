@@ -1,8 +1,14 @@
 import client from './client'
-import type { VideoPublic } from '../types'
+import type { CategoryShare, VideoPublic } from '../types'
 
-export const createCategoryShare = (category: string) =>
-  client.post<{ token: string; category: string }>('/category-shares', { category })
+export const listCategoryShares = () =>
+  client.get<CategoryShare[]>('/category-shares')
+
+export const createCategoryShare = (category: string, expires_at?: string | null) =>
+  client.post<CategoryShare>('/category-shares', { category, expires_at: expires_at ?? null })
+
+export const updateCategoryShare = (token: string, data: { enabled?: boolean; expires_at?: string | null }) =>
+  client.patch<CategoryShare>(`/category-shares/${token}`, data)
 
 export const revokeCategoryShare = (token: string) =>
   client.delete(`/category-shares/${token}`)

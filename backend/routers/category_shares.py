@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -17,9 +19,36 @@ router = APIRouter(prefix="/api/category-shares", tags=["category-shares"])
 
 class CategoryShareCreate(BaseModel):
     category: str
+    expires_at: datetime | None = None
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+class CategoryShareUpdate(BaseModel):
+    enabled: bool | None = None
+    expires_at: datetime | None = None
+
+
+class CategoryShareOut(BaseModel):
+    token: str
+    category: str
+    enabled: bool
+    expires_at: datetime | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+@router.get("", response_model=list[CategoryShareOut])
+async def list_shares(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(CategoryShare).where(CategoryShare.user_id == current_user.id)
+    )
+    return list(result.scalars().all())
+
+
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=CategoryShareOut)
 async def create_or_get_share(
     body: CategoryShareCreate,
     db: AsyncSession = Depends(get_db),
@@ -33,10 +62,37 @@ async def create_or_get_share(
     )
     share = result.scalar_one_or_none()
     if not share:
-        share = CategoryShare(user_id=current_user.id, category=body.category)
+        share = CategoryShare(
+            user_id=current_user.id,
+            category=body.category,
+            expires_at=body.expires_at,
+        )
         db.add(share)
         await db.flush()
-    return {"token": share.token, "category": share.category}
+    return share
+
+
+@router.patch("/{token}", response_model=CategoryShareOut)
+async def update_share(
+    token: str,
+    body: CategoryShareUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(CategoryShare).where(
+            CategoryShare.token == token,
+            CategoryShare.user_id == current_user.id,
+        )
+    )
+    share = result.scalar_one_or_none()
+    if not share:
+        raise not_found("Share not found")
+    if body.enabled is not None:
+        share.enabled = body.enabled
+    if "expires_at" in body.model_fields_set:
+        share.expires_at = body.expires_at
+    return share
 
 
 @router.delete("/{token}", status_code=204)
@@ -61,13 +117,7 @@ async def revoke_share(
 async def get_shared_category_video(
     token: str, video_id: str, db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(CategoryShare).where(CategoryShare.token == token)
-    )
-    share = result.scalar_one_or_none()
-    if not share:
-        raise not_found("Share not found")
-
+    share = await _get_valid_share(token, db)
     video_result = await db.execute(
         select(Video)
         .where(
@@ -85,13 +135,7 @@ async def get_shared_category_video(
 
 @router.get("/{token}/videos", response_model=list[VideoPublic])
 async def get_shared_category_videos(token: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(CategoryShare).where(CategoryShare.token == token)
-    )
-    share = result.scalar_one_or_none()
-    if not share:
-        raise not_found("Share not found")
-
+    share = await _get_valid_share(token, db)
     videos_result = await db.execute(
         select(Video)
         .where(
@@ -103,3 +147,13 @@ async def get_shared_category_videos(token: str, db: AsyncSession = Depends(get_
         .order_by(Video.created_at.desc())
     )
     return list(videos_result.scalars().all())
+
+
+async def _get_valid_share(token: str, db: AsyncSession) -> CategoryShare:
+    result = await db.execute(
+        select(CategoryShare).where(CategoryShare.token == token)
+    )
+    share = result.scalar_one_or_none()
+    if not share or not share.is_valid():
+        raise not_found("Share not found or expired")
+    return share

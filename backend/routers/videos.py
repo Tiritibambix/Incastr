@@ -295,7 +295,7 @@ async def stream_video(
             select(CategoryShare).where(CategoryShare.token == cat_token)
         )
         cs = cs_result.scalar_one_or_none()
-        if cs:
+        if cs and cs.is_valid():
             result = await db.execute(
                 select(Video).where(
                     Video.id == video_id,
