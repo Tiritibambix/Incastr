@@ -271,6 +271,7 @@ async def stream_video(
     video_id: str,
     request: Request,
     token: str | None = None,
+    cat_token: str | None = None,
     db: AsyncSession = Depends(get_db),
     credentials: HTTPAuthorizationCredentials | None = Depends(_optional_bearer),
 ):
@@ -287,6 +288,22 @@ async def stream_video(
                     select(Video).where(Video.id == video_id, Video.user_id == current_user.id)
                 )
                 video = result.scalar_one_or_none()
+
+    if video is None and cat_token:
+        from backend.models.category_share import CategoryShare
+        cs_result = await db.execute(
+            select(CategoryShare).where(CategoryShare.token == cat_token)
+        )
+        cs = cs_result.scalar_one_or_none()
+        if cs:
+            result = await db.execute(
+                select(Video).where(
+                    Video.id == video_id,
+                    Video.category == cs.category,
+                    Video.user_id == cs.user_id,
+                )
+            )
+            video = result.scalar_one_or_none()
 
     if video is None:
         result = await db.execute(

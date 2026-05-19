@@ -10,6 +10,7 @@ import VideoDetail from './pages/VideoDetail'
 import PublicVideoDetail from './pages/PublicVideoDetail'
 import Settings from './pages/Settings'
 import Admin from './pages/Admin'
+import CategoryShareView from './pages/CategoryShareView'
 import ShareView from './pages/ShareView'
 
 function ProtectedLayout() {
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/share/:token" element={<ShareView />} />
+        <Route path="/c/:token" element={<CategoryShareView />} />
         <Route path="/watch/:id" element={<PublicVideoDetail />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/library" element={<Home />} />

@@ -11,7 +11,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from backend.database import Base  # noqa: E402
-from backend.models import Folder, Tag, User, Video  # noqa: E402, F401
+from backend.models import CategoryShare, Folder, Tag, User, Video  # noqa: E402, F401
 
 target_metadata = Base.metadata
 

@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getPublicVideo, streamUrl, thumbnailUrl } from '../api/videos'
+import { getCategoryShareVideo } from '../api/categoryShares'
 import { useAuthStore } from '../store/auth'
 import type { VideoPublic } from '../types'
 import TagBadge from '../components/TagBadge'
 
 export default function PublicVideoDetail() {
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
+  const catToken = searchParams.get('cat_token')
   const { token } = useAuthStore()
   const [video, setVideo] = useState<VideoPublic | null>(null)
   const [loading, setLoading] = useState(true)
@@ -14,15 +17,20 @@ export default function PublicVideoDetail() {
 
   useEffect(() => {
     if (!id) return
-    getPublicVideo(id)
+    const fetch = catToken
+      ? getCategoryShareVideo(catToken, id)
+      : getPublicVideo(id)
+    fetch
       .then(({ data }) => { setVideo(data); setLoading(false) })
       .catch(() => { setError('Video not found'); setLoading(false) })
-  }, [id])
+  }, [id, catToken])
 
   const src = id
     ? token
       ? `${streamUrl(id)}?token=${encodeURIComponent(token)}`
-      : `/api/videos/${id}/stream`
+      : catToken
+        ? `/api/videos/${id}/stream?cat_token=${encodeURIComponent(catToken)}`
+        : `/api/videos/${id}/stream`
     : ''
 
   if (loading) {
