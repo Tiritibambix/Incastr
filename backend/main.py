@@ -9,7 +9,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import get_settings
-from backend.routers import auth, category_shares, folders, scan, tags, thumbnails, users, videos
+from backend.routers import (
+    auth,
+    category_shares,
+    folders,
+    scan,
+    tags,
+    thumbnails,
+    users,
+    videos,
+)
 
 logger = logging.getLogger(__name__)
 
