@@ -4,3 +4,6 @@ export const scanAll = () => client.post<{ scanned: number; added: number; updat
 
 export const scanFolder = (folderId: string) =>
   client.post<{ scanned: number; added: number; updated: number }>(`/scan/${folderId}`)
+
+export const regenerateThumbnails = () =>
+  client.post<{ queued: number }>('/scan/thumbnails/regenerate')

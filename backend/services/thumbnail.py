@@ -52,7 +52,10 @@ async def _get_duration(video_path: str) -> float | None:
             stderr=asyncio.subprocess.DEVNULL,
         )
         stdout, _ = await proc.communicate()
-        return float(stdout.decode().strip())
+        raw = stdout.decode().strip()
+        if not raw or raw.lower() == "n/a":
+            return None
+        return float(raw)
     except Exception:
         return None
 

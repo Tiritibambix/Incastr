@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listFolders, createFolder, deleteFolder } from '../api/folders'
-import { scanAll, scanFolder } from '../api/scan'
+import { regenerateThumbnails, scanAll, scanFolder } from '../api/scan'
 import type { Folder } from '../types'
 
 export default function Settings() {
@@ -60,6 +60,23 @@ export default function Settings() {
     }
   }
 
+  const handleRegenerateThumbnails = async () => {
+    setLoading(true)
+    setScanStatus('')
+    try {
+      const { data } = await regenerateThumbnails()
+      setScanStatus(
+        data.queued === 0
+          ? 'All thumbnails are already generated.'
+          : `Thumbnail generation queued for ${data.queued} video${data.queued !== 1 ? 's' : ''}.`
+      )
+    } catch {
+      setScanStatus('Failed to queue thumbnail generation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
@@ -67,13 +84,23 @@ export default function Settings() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Video Folders</h2>
-          <button
-            onClick={handleScanAll}
-            disabled={loading}
-            className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {loading ? 'Scanning...' : 'Scan all'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleRegenerateThumbnails}
+              disabled={loading}
+              className="px-4 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50"
+              title="Generate missing thumbnails for all indexed videos"
+            >
+              {loading ? '…' : 'Regenerate thumbnails'}
+            </button>
+            <button
+              onClick={handleScanAll}
+              disabled={loading}
+              className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {loading ? 'Scanning...' : 'Scan all'}
+            </button>
+          </div>
         </div>
 
         {scanStatus && (

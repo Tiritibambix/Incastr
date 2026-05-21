@@ -83,6 +83,10 @@ async def scan_folder(
         else:
             video.last_scanned_at = datetime.utcnow()
             video.is_missing = False
+            if not video.thumbnail_path:
+                background_tasks.add_task(
+                    _generate_thumb_and_update, fp_str, folder.user_id, video.id
+                )
             updated += 1
 
         found_paths.add(fp_str)
