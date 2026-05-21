@@ -1,8 +1,11 @@
 import client from './client'
 import type { Video, VideoPublic, Visibility } from '../types'
 
-export const listVideos = (params?: { q?: string; field?: string; visibility?: string }) =>
+export const listVideos = (params?: { q?: string; field?: string; visibility?: string; category?: string }) =>
   client.get<Video[]>('/videos', { params })
+
+export const listCategories = () =>
+  client.get<string[]>('/videos/categories')
 
 export const getVideo = (id: string) => client.get<Video>(`/videos/${id}`)
 

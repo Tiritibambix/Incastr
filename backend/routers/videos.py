@@ -76,17 +76,36 @@ async def get_public_video(video_id: str, db: AsyncSession = Depends(get_db)):
     return video
 
 
+@router.get("/categories")
+async def list_categories(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import distinct as sql_distinct
+    result = await db.execute(
+        select(sql_distinct(Video.category))
+        .where(
+            Video.user_id == current_user.id,
+            Video.category.isnot(None),
+            ~Video.is_missing,
+        )
+        .order_by(Video.category)
+    )
+    return [row[0] for row in result.all()]
+
+
 @router.get("", response_model=list[VideoOut])
 async def list_videos(
     q: str | None = None,
     field: str | None = None,
     visibility: str | None = None,
+    category: str | None = None,
     skip: int = 0,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await search_videos(db, current_user.id, q=q, field=field, visibility=visibility, skip=skip, limit=limit)
+    return await search_videos(db, current_user.id, q=q, field=field, visibility=visibility, category=category, skip=skip, limit=limit)
 
 
 @router.get("/share/{share_token}", response_model=VideoPublic)

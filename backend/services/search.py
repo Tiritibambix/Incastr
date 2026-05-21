@@ -12,6 +12,7 @@ async def search_videos(
     q: str | None = None,
     field: str | None = None,
     visibility: str | None = None,
+    category: str | None = None,
     skip: int = 0,
     limit: int = 50,
 ) -> list[Video]:
@@ -19,10 +20,14 @@ async def search_videos(
         select(Video)
         .where(Video.user_id == user_id, ~Video.is_missing)
         .options(selectinload(Video.tags))
+        .order_by(Video.created_at.desc())
     )
 
     if visibility:
         stmt = stmt.where(Video.visibility == visibility)
+
+    if category:
+        stmt = stmt.where(Video.category == category)
 
     if q:
         pattern = f"%{q}%"
