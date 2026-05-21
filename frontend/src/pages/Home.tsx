@@ -42,7 +42,7 @@ export default function Home() {
   const [openPopover, setOpenPopover] = useState<string | null>(null)
   const [justCopied, setJustCopied] = useState(false)
   const [savingShare, setSavingShare] = useState(false)
-  const popoverRef = useRef<HTMLElement>(null)
+  const popoverRef = useRef<HTMLLIElement>(null)
 
   // Load categories (complete list, server-side)
   useEffect(() => {
