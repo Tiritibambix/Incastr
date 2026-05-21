@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getCategoryShareVideos } from '../api/categoryShares'
 import { thumbnailUrl } from '../api/videos'
@@ -24,7 +24,7 @@ export default function CategoryShareView() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = async (pageNum: number) => {
+  const load = useCallback(async (pageNum: number) => {
     if (!token) return
     setLoading(true)
     try {
@@ -37,9 +37,9 @@ export default function CategoryShareView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
 
-  useEffect(() => { load(1) }, [token])
+  useEffect(() => { load(1) }, [load])
 
   const goToPage = (p: number) => {
     setPage(p)
