@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createCategoryShare,
   listCategoryShares,
@@ -59,7 +59,7 @@ export default function Home() {
   }, [])
 
   // Load videos whenever category changes (server-side filter)
-  const loadVideos = async (q = '', field = '', cat = selectedCategory) => {
+  const loadVideos = useCallback(async (q = '', field = '', cat: string | null = null) => {
     setLoading(true)
     setError('')
     setSelectedTags([])
@@ -74,9 +74,9 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { loadVideos() }, [])
+  useEffect(() => { loadVideos() }, [loadVideos])
 
   // Close popover on outside click
   useEffect(() => {
