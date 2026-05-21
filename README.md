@@ -6,6 +6,12 @@ Incastr lets you point it at a folder on your server, and it turns your videos i
 
 ---
 
+> ⚠️ **Security notice**
+>
+> This application has been coded w<ith the help of AI and is designed for local or trusted-network use only. Exposing it to the public internet without an additional access-control layer (reverse proxy with auth, VPN, etc.) is done at your own risk.
+
+---
+
 ## The idea
 
 You've got videos scattered across your drives. Maybe they're family recordings, a personal film collection, tutorials you've saved, or anything else that doesn't belong on YouTube. You want to browse them from a nice interface, share a folder with a friend, and not think about it too much.
