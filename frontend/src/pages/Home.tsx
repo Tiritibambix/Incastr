@@ -31,6 +31,8 @@ function shareStatus(share: CategoryShare): 'active' | 'disabled' | 'expired' {
   return 'active'
 }
 
+const PAGE_SIZE = 16
+
 export default function Home() {
   const [videos, setVideos] = useState<Video[]>([])
   const [categories, setCategories] = useState<string[]>([])
@@ -38,6 +40,7 @@ export default function Home() {
   const [error, setError] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [page, setPage] = useState(1)
   const [shares, setShares] = useState<Map<string, CategoryShare>>(new Map())
   // Share modal
   const [shareModalCat, setShareModalCat] = useState<string | null>(null)
@@ -57,15 +60,18 @@ export default function Home() {
       .catch(() => {})
   }, [])
 
-  const loadVideos = useCallback(async (q = '', field = '', cat: string | null = null) => {
+  const loadVideos = useCallback(async (q = '', field = '', cat: string | null = null, pageNum = 1) => {
     setLoading(true)
     setError('')
     setSelectedTags([])
     try {
-      const params: Record<string, string> = {}
+      const params: Record<string, string | number> = {
+        limit: PAGE_SIZE,
+        skip: (pageNum - 1) * PAGE_SIZE,
+      }
       if (q) { params.q = q; if (field) params.field = field }
       if (cat) params.category = cat
-      const { data } = await listVideos(Object.keys(params).length ? params : undefined)
+      const { data } = await listVideos(params)
       setVideos(Array.isArray(data) ? data : [])
     } catch {
       setError('Failed to load videos')
@@ -91,7 +97,14 @@ export default function Home() {
 
   const selectCategory = (cat: string | null) => {
     setSelectedCategory(cat)
-    loadVideos('', '', cat)
+    setPage(1)
+    loadVideos('', '', cat, 1)
+  }
+
+  const goToPage = (p: number) => {
+    setPage(p)
+    loadVideos('', '', selectedCategory, p)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const toggleTag = (tagId: string) =>
@@ -239,7 +252,7 @@ export default function Home() {
       <div className={hasSidebar ? 'pl-44' : ''}>
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="mb-4">
-            <SearchBar onSearch={(q, field) => loadVideos(q, field, selectedCategory)} />
+            <SearchBar onSearch={(q, field) => { setPage(1); loadVideos(q, field, selectedCategory, 1) }} />
           </div>
 
           {loading && (
@@ -260,6 +273,37 @@ export default function Home() {
           {!loading && filteredVideos.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredVideos.map(v => <VideoCard key={v.id} video={v} />)}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && !error && (videos.length > 0 || page > 1) && (
+            <div className="flex items-center justify-center gap-3 mt-8">
+              <button
+                onClick={() => goToPage(page - 1)}
+                disabled={page === 1}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous
+              </button>
+
+              <span className="text-sm text-gray-500 min-w-[5rem] text-center">
+                Page {page}
+              </span>
+
+              <button
+                onClick={() => goToPage(page + 1)}
+                disabled={videos.length < PAGE_SIZE}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           )}
         </div>
