@@ -16,5 +16,5 @@ export const revokeCategoryShare = (token: string) =>
 export const getCategoryShareVideo = (token: string, videoId: string) =>
   client.get<VideoPublic>(`/category-shares/${token}/video/${videoId}`)
 
-export const getCategoryShareVideos = (token: string) =>
-  client.get<VideoPublic[]>(`/category-shares/${token}/videos`)
+export const getCategoryShareVideos = (token: string, skip = 0, limit = 16) =>
+  client.get<VideoPublic[]>(`/category-shares/${token}/videos`, { params: { skip, limit } })

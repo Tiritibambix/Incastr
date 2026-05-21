@@ -134,7 +134,12 @@ async def get_shared_category_video(
 
 
 @router.get("/{token}/videos", response_model=list[VideoPublic])
-async def get_shared_category_videos(token: str, db: AsyncSession = Depends(get_db)):
+async def get_shared_category_videos(
+    token: str,
+    skip: int = 0,
+    limit: int = 16,
+    db: AsyncSession = Depends(get_db),
+):
     share = await _get_valid_share(token, db)
     videos_result = await db.execute(
         select(Video)
@@ -145,6 +150,8 @@ async def get_shared_category_videos(token: str, db: AsyncSession = Depends(get_
         )
         .options(selectinload(Video.tags))
         .order_by(Video.created_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
     return list(videos_result.scalars().all())
 
