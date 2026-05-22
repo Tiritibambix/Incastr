@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getVideo, updateVideo, deleteVideo, addTag, removeTag, streamUrl, thumbnailUrl } from '../api/videos'
+import { getVideo, updateVideo, deleteVideo, addTag, removeTag, moveVideoCategory, renameVideoFile, streamUrl, thumbnailUrl } from '../api/videos'
+import { listCategories } from '../api/videos'
 import { listTags, createTag } from '../api/tags'
 import type { Video, Tag, Visibility } from '../types'
 import VideoPlayer from '../components/VideoPlayer'
@@ -25,17 +26,30 @@ export default function VideoDetail() {
   const [deleteFromDisk, setDeleteFromDisk] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  // File operations
+  const [availableCategories, setAvailableCategories] = useState<string[]>([])
+  const [movingCategory, setMovingCategory] = useState('')
+  const [moveError, setMoveError] = useState('')
+  const [moving, setMoving] = useState(false)
+  const [renamingFile, setRenamingFile] = useState(false)
+  const [newFilename, setNewFilename] = useState('')
+  const [renameError, setRenameError] = useState('')
 
   useEffect(() => {
     if (!id) return
-    Promise.all([getVideo(id), listTags()]).then(([{ data: v }, { data: tags }]) => {
-      setVideo(v)
-      setTitle(v.title)
-      setDescription(v.description ?? '')
-      setVisibility(v.visibility)
-      setAllTags(Array.isArray(tags) ? tags : [])
-      setLoading(false)
-    })
+    Promise.all([getVideo(id), listTags(), listCategories()]).then(
+      ([{ data: v }, { data: tags }, { data: cats }]) => {
+        setVideo(v)
+        setTitle(v.title)
+        setDescription(v.description ?? '')
+        setVisibility(v.visibility)
+        setMovingCategory(v.category ?? '')
+        setNewFilename(v.filename)
+        setAllTags(Array.isArray(tags) ? tags : [])
+        setAvailableCategories(Array.isArray(cats) ? cats : [])
+        setLoading(false)
+      }
+    )
   }, [id])
 
   const handleSave = async () => {
@@ -66,6 +80,40 @@ export default function VideoDetail() {
     const { data } = await addTag(video.id, tag.id)
     setVideo(data)
     setNewTagName('')
+  }
+
+  const handleMoveCategory = async () => {
+    if (!video) return
+    setMoving(true)
+    setMoveError('')
+    try {
+      const cat = movingCategory.trim() || null
+      const { data } = await moveVideoCategory(video.id, cat)
+      setVideo(data)
+      setMovingCategory(data.category ?? '')
+      // Refresh category list in case a new folder was created
+      const { data: cats } = await listCategories()
+      setAvailableCategories(Array.isArray(cats) ? cats : [])
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setMoveError(msg ?? 'Move failed')
+    } finally {
+      setMoving(false)
+    }
+  }
+
+  const handleRenameFile = async () => {
+    if (!video || !newFilename.trim()) return
+    setRenameError('')
+    try {
+      const { data } = await renameVideoFile(video.id, newFilename.trim())
+      setVideo(data)
+      setTitle(data.title)
+      setNewFilename(data.filename)
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setRenameError(msg ?? 'Rename failed')
+    }
   }
 
   const handleDeleteConfirm = async () => {
@@ -238,6 +286,58 @@ export default function VideoDetail() {
                     Add
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* ── File management ── */}
+            <div className="border-t pt-4 space-y-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">File</p>
+
+              {/* Move to category */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Category</label>
+                <div className="flex gap-2">
+                  <input
+                    list="category-list"
+                    value={movingCategory}
+                    onChange={e => setMovingCategory(e.target.value)}
+                    placeholder="No category"
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <datalist id="category-list">
+                    {availableCategories.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                  <button
+                    onClick={handleMoveCategory}
+                    disabled={moving || movingCategory === (video.category ?? '')}
+                    className="px-3 py-1.5 bg-gray-100 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-40"
+                  >
+                    {moving ? '…' : 'Move'}
+                  </button>
+                </div>
+                {moveError && <p className="mt-1 text-xs text-red-600">{moveError}</p>}
+              </div>
+
+              {/* Rename file */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Filename</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newFilename}
+                    onChange={e => setNewFilename(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleRenameFile() }}
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <button
+                    onClick={handleRenameFile}
+                    disabled={!newFilename.trim() || newFilename === video.filename}
+                    className="px-3 py-1.5 bg-gray-100 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-40"
+                  >
+                    Rename
+                  </button>
+                </div>
+                {renameError && <p className="mt-1 text-xs text-red-600">{renameError}</p>}
               </div>
             </div>
 

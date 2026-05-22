@@ -1,4 +1,6 @@
 import os
+import shutil
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
@@ -9,12 +11,13 @@ from sqlalchemy.orm import selectinload
 
 from backend.core.auth import decode_token
 from backend.core.dependencies import get_current_user
-from backend.core.exceptions import not_found
+from backend.core.exceptions import bad_request, conflict, not_found
 from backend.database import get_db
+from backend.models.folder import Folder
 from backend.models.tag import Tag
 from backend.models.user import User
 from backend.models.video import Video, Visibility
-from backend.schemas.video import VideoOut, VideoPublic, VideoUpdate
+from backend.schemas.video import VideoMoveCategory, VideoOut, VideoPublic, VideoRenameFile, VideoUpdate
 from backend.services.search import search_videos
 
 _optional_bearer = HTTPBearer(auto_error=False)
@@ -283,6 +286,91 @@ async def delete_video(
                        "Make sure the volume is not mounted read-only (:ro).",
             )
     await db.delete(video)
+
+
+@router.patch("/{video_id}/category", response_model=VideoOut)
+async def move_video_category(
+    video_id: str,
+    body: VideoMoveCategory,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Video)
+        .where(Video.id == video_id, Video.user_id == current_user.id)
+        .options(selectinload(Video.tags))
+    )
+    video = result.scalar_one_or_none()
+    if not video:
+        raise not_found("Video not found")
+
+    folder_result = await db.execute(select(Folder).where(Folder.id == video.folder_id))
+    folder = folder_result.scalar_one_or_none()
+    if not folder:
+        raise not_found("Folder not found")
+
+    new_cat = body.category.strip() if body.category else None
+    if new_cat and ("/" in new_cat or "\\" in new_cat or ".." in new_cat):
+        raise bad_request("Invalid category name")
+
+    new_dir = Path(folder.path) / new_cat if new_cat else Path(folder.path)
+    new_path = new_dir / video.filename
+
+    if str(new_path) == video.filepath:
+        return video
+
+    if new_path.exists():
+        raise conflict("A file with this name already exists in the target category")
+
+    try:
+        new_dir.mkdir(parents=True, exist_ok=True)
+        shutil.move(video.filepath, str(new_path))
+    except OSError as exc:
+        raise HTTPException(status_code=409, detail=f"Cannot move file: {exc.strerror}. Check the volume is not read-only.")
+
+    video.filepath = str(new_path)
+    video.category = new_cat
+    return video
+
+
+@router.patch("/{video_id}/rename", response_model=VideoOut)
+async def rename_video_file(
+    video_id: str,
+    body: VideoRenameFile,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    new_name = body.filename.strip()
+    if not new_name or "/" in new_name or "\\" in new_name or ".." in new_name:
+        raise bad_request("Invalid filename")
+
+    result = await db.execute(
+        select(Video)
+        .where(Video.id == video_id, Video.user_id == current_user.id)
+        .options(selectinload(Video.tags))
+    )
+    video = result.scalar_one_or_none()
+    if not video:
+        raise not_found("Video not found")
+
+    old_path = Path(video.filepath)
+    new_path = old_path.parent / new_name
+
+    if new_path == old_path:
+        return video
+
+    if new_path.exists():
+        raise conflict("A file with this name already exists")
+
+    try:
+        old_path.rename(new_path)
+    except OSError as exc:
+        raise HTTPException(status_code=409, detail=f"Cannot rename file: {exc.strerror}. Check the volume is not read-only.")
+
+    video.filepath = str(new_path)
+    video.filename = new_name
+    video.title = new_path.stem  # sync title with the new filename stem
+    return video
 
 
 @router.get("/{video_id}/stream")

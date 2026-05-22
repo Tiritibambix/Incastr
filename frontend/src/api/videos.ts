@@ -24,6 +24,12 @@ export const updateVideo = (id: string, data: { title?: string; description?: st
 export const deleteVideo = (id: string, deleteFile = false) =>
   client.delete(`/videos/${id}`, { params: deleteFile ? { delete_file: true } : undefined })
 
+export const moveVideoCategory = (id: string, category: string | null) =>
+  client.patch<Video>(`/videos/${id}/category`, { category })
+
+export const renameVideoFile = (id: string, filename: string) =>
+  client.patch<Video>(`/videos/${id}/rename`, { filename })
+
 export const addTag = (videoId: string, tagId: string) =>
   client.post<Video>(`/videos/${videoId}/tags/${tagId}`)
 

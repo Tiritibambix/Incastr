@@ -12,6 +12,14 @@ class VideoUpdate(BaseModel):
     visibility: Visibility | None = None
 
 
+class VideoMoveCategory(BaseModel):
+    category: str | None = None  # None = move to root of folder (no category)
+
+
+class VideoRenameFile(BaseModel):
+    filename: str
+
+
 class VideoOut(BaseModel):
     id: str
     user_id: str
