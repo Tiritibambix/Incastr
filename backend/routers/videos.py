@@ -17,7 +17,13 @@ from backend.models.folder import Folder
 from backend.models.tag import Tag
 from backend.models.user import User
 from backend.models.video import Video, Visibility
-from backend.schemas.video import VideoMoveCategory, VideoOut, VideoPublic, VideoRenameFile, VideoUpdate
+from backend.schemas.video import (
+    VideoMoveCategory,
+    VideoOut,
+    VideoPublic,
+    VideoRenameFile,
+    VideoUpdate,
+)
 from backend.services.search import search_videos
 
 _optional_bearer = HTTPBearer(auto_error=False)
