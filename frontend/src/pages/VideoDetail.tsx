@@ -31,7 +31,6 @@ export default function VideoDetail() {
   const [movingCategory, setMovingCategory] = useState('')
   const [moveError, setMoveError] = useState('')
   const [moving, setMoving] = useState(false)
-  const [renamingFile, setRenamingFile] = useState(false)
   const [newFilename, setNewFilename] = useState('')
   const [renameError, setRenameError] = useState('')
 
