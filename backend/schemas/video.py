@@ -40,8 +40,24 @@ class VideoOut(BaseModel):
     updated_at: datetime
     last_scanned_at: datetime | None
     tags: list[TagOut] = []
+    resume_position_seconds: int | None = None
 
     model_config = {"from_attributes": True}
+
+
+class DuplicateGroup(BaseModel):
+    filename: str
+    file_size_bytes: int
+    videos: list[VideoOut]
+
+
+class WatchProgressUpdate(BaseModel):
+    position_seconds: int
+
+
+class WatchHistoryEntry(BaseModel):
+    watched_at: datetime
+    video: VideoOut
 
 
 class VideoPublic(BaseModel):

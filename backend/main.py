@@ -28,9 +28,13 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     await _bootstrap_admin(settings)
     await _bootstrap_media_dir(settings)
+    await _start_watchers()
     if settings.scan_interval_minutes > 0:
         asyncio.create_task(_auto_scan_loop(settings.scan_interval_minutes))
     yield
+    from backend.services.watcher import stop_watcher
+
+    stop_watcher()
 
 
 async def _bootstrap_admin(settings):
@@ -97,6 +101,20 @@ async def _bootstrap_media_dir(settings):
         await db.commit()
 
 
+async def _start_watchers():
+    from sqlalchemy import select
+
+    from backend.database import AsyncSessionLocal
+    from backend.models.folder import Folder
+    from backend.services.watcher import start_watcher
+
+    loop = asyncio.get_running_loop()
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Folder))
+        folder_list = result.scalars().all()
+        for folder in folder_list:
+            start_watcher(folder.user_id, folder.id, folder.path, loop)
+
 
 async def _auto_scan_loop(interval_minutes: int):
     from fastapi import BackgroundTasks
@@ -112,10 +130,12 @@ async def _auto_scan_loop(interval_minutes: int):
             async with AsyncSessionLocal() as db:
                 result = await db.execute(select(Folder))
                 folder_list = result.scalars().all()
+                bt = BackgroundTasks()
                 for folder in folder_list:
-                    bt = BackgroundTasks()
                     await scan_folder(folder, db, bt)
                 await db.commit()
+                for task in bt.tasks:
+                    await task()
         except Exception as e:
             logger.error("Auto-scan error: %s", e)
 

@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { getSharedVideo, thumbnailUrl } from '../api/videos'
 import type { VideoPublic } from '../types'
 import TagBadge from '../components/TagBadge'
+import VideoPlayer from '../components/VideoPlayer'
+import Description from '../components/Description'
 
 export default function ShareView() {
   const { token } = useParams<{ token: string }>()
@@ -39,14 +41,13 @@ export default function ShareView() {
 
       {/* Video area */}
       <div className="flex-1 min-w-0 min-h-0 bg-black overflow-hidden flex items-center justify-center">
-        <video
-          controls
-          className="w-full h-full object-contain"
-          poster={video.thumbnail_path ? thumbnailUrl(video.user_id, video.id) : undefined}
-          preload="metadata"
-        >
-          <source src={`/api/videos/share/${token}/stream`} type={video.mime_type ?? 'video/mp4'} />
-        </video>
+        <VideoPlayer
+          fill
+          src={`/api/videos/share/${token}/stream`}
+          mimeType={video.mime_type}
+          poster={video.thumbnail_path ? thumbnailUrl(video.user_id, video.id, { shareToken: token }) : undefined}
+          token={null}
+        />
       </div>
 
       {/* Info panel */}
@@ -64,7 +65,7 @@ export default function ShareView() {
           </div>
 
           {video.description && (
-            <p className="text-gray-400 text-sm">{video.description}</p>
+            <Description text={video.description} className="text-gray-400 text-sm" />
           )}
 
           {(video.tags ?? []).length > 0 && (

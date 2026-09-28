@@ -3,15 +3,77 @@ name: Build and publish Docker image
 on:
   push:
     branches:
-      - main
+      - '**'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  check:
+    name: Check for new commit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      skip: ${{ steps.compare.outputs.skip }}
+      short_commit: ${{ steps.meta.outputs.short_commit }}
+      date_tag: ${{ steps.meta.outputs.date_tag }}
+      branch: ${{ steps.meta.outputs.branch }}
+    steps:
+      - name: Extract metadata
+        id: meta
+        run: |
+          echo "short_commit=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          echo "date_tag=$(date +'%Y%m%d')" >> "$GITHUB_OUTPUT"
+          echo "branch=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore last built commit for this branch
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25  # v5.1.0
+        with:
+          path: last_commit.txt
+          key: last-commit-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: last-commit-${{ github.ref_name }}-
+
+      - name: Read last built commit
+        id: read
+        run: |
+          if [ -f last_commit.txt ]; then
+            echo "last_commit=$(cat last_commit.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "last_commit=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compare commits
+        id: compare
+        run: |
+          if [ "${{ github.sha }}" = "${{ steps.read.outputs.last_commit }}" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "No new commit. Skipping build."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "New commit detected or manual trigger."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Save new commit hash to cache
+        if: steps.compare.outputs.skip == 'false'
+        run: echo "${{ github.sha }}" > last_commit.txt
+
+      - name: Update cache
+        if: steps.compare.outputs.skip == 'false'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25  # v5.1.0
+        with:
+          path: last_commit.txt
+          key: last-commit-${{ github.ref_name }}-${{ github.run_id }}
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    needs: check
+    if: needs.check.outputs.skip == 'false'
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
@@ -42,7 +104,10 @@ jobs:
   build-and-push:
     name: Build and push Docker image
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [check, lint]
+    if: needs.check.outputs.skip == 'false'
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
@@ -55,13 +120,30 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Compute image tags
+        id: tags
+        env:
+          BRANCH: ${{ needs.check.outputs.branch }}
+          SHORT_COMMIT: ${{ needs.check.outputs.short_commit }}
+          DATE_TAG: ${{ needs.check.outputs.date_tag }}
+        run: |
+          {
+            echo "list<<TAGEOF"
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              echo "tiritibambix/incastr:latest"
+              echo "tiritibambix/incastr:${{ github.sha }}"
+            fi
+            echo "tiritibambix/incastr:${BRANCH}-latest"
+            echo "tiritibambix/incastr:${BRANCH}-${SHORT_COMMIT}"
+            echo "tiritibambix/incastr:${BRANCH}-${DATE_TAG}"
+            echo "TAGEOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991  # v6.13.0
         with:
           context: .
           push: true
-          tags: |
-            tiritibambix/incastr:latest
-            tiritibambix/incastr:${{ github.sha }}
+          tags: ${{ steps.tags.outputs.list }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

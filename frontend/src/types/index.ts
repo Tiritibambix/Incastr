@@ -42,6 +42,7 @@ export interface Video {
   updated_at: string
   last_scanned_at: string | null
   tags: Tag[]
+  resume_position_seconds: number | null
 }
 
 export interface CategoryShare {
@@ -50,6 +51,17 @@ export interface CategoryShare {
   enabled: boolean
   expires_at: string | null
   created_at: string
+}
+
+export interface DuplicateGroup {
+  filename: string
+  file_size_bytes: number
+  videos: Video[]
+}
+
+export interface WatchHistoryEntry {
+  watched_at: string
+  video: Video
 }
 
 export interface VideoPublic {

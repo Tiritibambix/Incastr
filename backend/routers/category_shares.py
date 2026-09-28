@@ -13,6 +13,7 @@ from backend.models.category_share import CategoryShare
 from backend.models.user import User
 from backend.models.video import Video
 from backend.schemas.video import VideoPublic
+from backend.services.sort import apply_sort
 
 router = APIRouter(prefix="/api/category-shares", tags=["category-shares"])
 
@@ -136,12 +137,13 @@ async def get_shared_category_video(
 @router.get("/{token}/videos", response_model=list[VideoPublic])
 async def get_shared_category_videos(
     token: str,
+    sort: str | None = None,
     skip: int = 0,
     limit: int = 16,
     db: AsyncSession = Depends(get_db),
 ):
     share = await _get_valid_share(token, db)
-    videos_result = await db.execute(
+    stmt = (
         select(Video)
         .where(
             Video.user_id == share.user_id,
@@ -149,10 +151,9 @@ async def get_shared_category_videos(
             ~Video.is_missing,
         )
         .options(selectinload(Video.tags))
-        .order_by(Video.created_at.desc())
-        .offset(skip)
-        .limit(limit)
     )
+    stmt = apply_sort(stmt, sort).offset(skip).limit(limit)
+    videos_result = await db.execute(stmt)
     return list(videos_result.scalars().all())
 
 

@@ -11,15 +11,19 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isFirstRun, setIsFirstRun] = useState(false)
+  const [registrationOpen, setRegistrationOpen] = useState(true)
   const { setToken, setUser } = useAuthStore()
   const navigate = useNavigate()
 
   useEffect(() => {
     getAuthStatus()
       .then(({ data }) => {
+        setRegistrationOpen(data.registration_open)
         if (!data.has_users) {
           setIsFirstRun(true)
           setMode('register')
+        } else if (!data.registration_open) {
+          setMode('login')
         }
       })
       .catch(() => {})
@@ -57,20 +61,22 @@ export default function Login() {
           </div>
         )}
 
-        <div className="flex mb-6 border-b">
-          <button
-            className={`flex-1 pb-2 text-sm font-medium ${mode === 'login' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
-            onClick={() => setMode('login')}
-          >
-            Login
-          </button>
-          <button
-            className={`flex-1 pb-2 text-sm font-medium ${mode === 'register' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
-            onClick={() => setMode('register')}
-          >
-            Register
-          </button>
-        </div>
+        {(isFirstRun || registrationOpen) && (
+          <div className="flex mb-6 border-b">
+            <button
+              className={`flex-1 pb-2 text-sm font-medium ${mode === 'login' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
+              onClick={() => setMode('login')}
+            >
+              Login
+            </button>
+            <button
+              className={`flex-1 pb-2 text-sm font-medium ${mode === 'register' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
+              onClick={() => setMode('register')}
+            >
+              Register
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

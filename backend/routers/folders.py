@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 from fastapi import APIRouter, Depends, status
@@ -10,6 +11,7 @@ from backend.database import get_db
 from backend.models.folder import Folder
 from backend.models.user import User
 from backend.schemas.folder import FolderCreate, FolderOut, FolderUpdate
+from backend.services.watcher import start_watcher, stop_watching_folder
 
 router = APIRouter(prefix="/api/folders", tags=["folders"])
 
@@ -34,6 +36,7 @@ async def create_folder(
     folder = Folder(user_id=current_user.id, path=body.path, label=body.label)
     db.add(folder)
     await db.flush()
+    start_watcher(current_user.id, folder.id, folder.path, asyncio.get_running_loop())
     return folder
 
 
@@ -50,12 +53,16 @@ async def update_folder(
     folder = result.scalar_one_or_none()
     if not folder:
         raise not_found("Folder not found")
+    path_changed = body.path is not None and body.path != folder.path
     if body.path is not None:
         if not os.path.isdir(body.path) or not os.access(body.path, os.R_OK):
             raise bad_request("Path does not exist or is not readable")
         folder.path = body.path
     if body.label is not None:
         folder.label = body.label
+    if path_changed:
+        stop_watching_folder(folder.id)
+        start_watcher(current_user.id, folder.id, folder.path, asyncio.get_running_loop())
     return folder
 
 
@@ -71,4 +78,5 @@ async def delete_folder(
     folder = result.scalar_one_or_none()
     if not folder:
         raise not_found("Folder not found")
+    stop_watching_folder(folder.id)
     await db.delete(folder)

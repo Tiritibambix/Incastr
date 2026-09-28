@@ -4,11 +4,13 @@ from pathlib import Path
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+from watchdog.observers.api import ObservedWatch
 
 logger = logging.getLogger(__name__)
 
-VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
+VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v", ".ts", ".flv", ".wmv", ".mpg", ".mpeg", ".m2ts", ".mts"}
 _observer: Observer | None = None
+_watches: dict[str, ObservedWatch] = {}
 
 
 class VideoEventHandler(FileSystemEventHandler):
@@ -22,7 +24,7 @@ class VideoEventHandler(FileSystemEventHandler):
             path = Path(event.src_path)
             if path.suffix.lower() in VIDEO_EXTENSIONS:
                 asyncio.run_coroutine_threadsafe(
-                    self._handle_new_file(str(path)), self.loop
+                    self._handle_change(str(path)), self.loop
                 )
 
     def on_moved(self, event):
@@ -30,10 +32,18 @@ class VideoEventHandler(FileSystemEventHandler):
             path = Path(event.dest_path)
             if path.suffix.lower() in VIDEO_EXTENSIONS:
                 asyncio.run_coroutine_threadsafe(
-                    self._handle_new_file(str(path)), self.loop
+                    self._handle_change(str(path)), self.loop
                 )
 
-    async def _handle_new_file(self, filepath: str):
+    def on_deleted(self, event):
+        if not event.is_directory:
+            path = Path(event.src_path)
+            if path.suffix.lower() in VIDEO_EXTENSIONS:
+                asyncio.run_coroutine_threadsafe(
+                    self._handle_change(str(path)), self.loop
+                )
+
+    async def _handle_change(self, filepath: str):
         from fastapi import BackgroundTasks
         from sqlalchemy import select
 
@@ -57,9 +67,19 @@ def start_watcher(user_id: str, folder_id: str, path: str, loop: asyncio.Abstrac
     if _observer is None:
         _observer = Observer()
         _observer.start()
+    if folder_id in _watches:
+        stop_watching_folder(folder_id)
     handler = VideoEventHandler(user_id, folder_id, loop)
-    _observer.schedule(handler, path, recursive=True)
+    watch = _observer.schedule(handler, path, recursive=True)
+    _watches[folder_id] = watch
     logger.info("Watching %s for user %s", path, user_id)
+
+
+def stop_watching_folder(folder_id: str):
+    watch = _watches.pop(folder_id, None)
+    if watch and _observer:
+        _observer.unschedule(watch)
+        logger.info("Stopped watching folder %s", folder_id)
 
 
 def stop_watcher():
@@ -68,3 +88,4 @@ def stop_watcher():
         _observer.stop()
         _observer.join()
         _observer = None
+    _watches.clear()

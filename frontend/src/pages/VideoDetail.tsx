@@ -3,15 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getVideo, updateVideo, deleteVideo, addTag, removeTag, moveVideoCategory, renameVideoFile, streamUrl, thumbnailUrl } from '../api/videos'
 import { listCategories } from '../api/videos'
 import { listTags, createTag } from '../api/tags'
+import { useAuthStore } from '../store/auth'
+import { copyToClipboard } from '../utils/clipboard'
 import type { Video, Tag, Visibility } from '../types'
 import VideoPlayer from '../components/VideoPlayer'
 import TagBadge from '../components/TagBadge'
+import Description from '../components/Description'
 
 const VISIBILITY_OPTIONS: Visibility[] = ['private', 'public', 'unlisted']
 
 export default function VideoDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { token } = useAuthStore()
   const [video, setVideo] = useState<Video | null>(null)
   const [allTags, setAllTags] = useState<Tag[]>([])
   const [editing, setEditing] = useState(false)
@@ -20,6 +24,7 @@ export default function VideoDetail() {
   const [visibility, setVisibility] = useState<Visibility>('private')
   const [newTagName, setNewTagName] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -36,8 +41,10 @@ export default function VideoDetail() {
 
   useEffect(() => {
     if (!id) return
-    Promise.all([getVideo(id), listTags(), listCategories()]).then(
-      ([{ data: v }, { data: tags }, { data: cats }]) => {
+    setLoading(true)
+    setLoadError('')
+    Promise.all([getVideo(id), listTags(), listCategories()])
+      .then(([{ data: v }, { data: tags }, { data: cats }]) => {
         setVideo(v)
         setTitle(v.title)
         setDescription(v.description ?? '')
@@ -46,9 +53,9 @@ export default function VideoDetail() {
         setNewFilename(v.filename)
         setAllTags(Array.isArray(tags) ? tags : [])
         setAvailableCategories(Array.isArray(cats) ? cats : [])
-        setLoading(false)
-      }
-    )
+      })
+      .catch(() => setLoadError('Failed to load video'))
+      .finally(() => setLoading(false))
   }, [id])
 
   const handleSave = async () => {
@@ -133,18 +140,7 @@ export default function VideoDetail() {
     if (!video) return
     const url = `${window.location.origin}/share/${video.share_token}`
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url)
-      } else {
-        const el = document.createElement('textarea')
-        el.value = url
-        el.setAttribute('readonly', '')
-        el.style.cssText = 'position:fixed;top:-9999px;left:-9999px'
-        document.body.appendChild(el)
-        el.select()
-        document.execCommand('copy')
-        document.body.removeChild(el)
-      }
+      await copyToClipboard(url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
     } catch {
@@ -159,6 +155,7 @@ export default function VideoDetail() {
       </div>
     )
   }
+  if (loadError) return <p className="text-center py-20 text-red-600">{loadError}</p>
   if (!video) return <p className="text-center py-20 text-gray-500">Video not found</p>
 
   const unattachedTags = allTags.filter((t) => !(video.tags ?? []).find((vt) => vt.id === t.id))
@@ -174,7 +171,9 @@ export default function VideoDetail() {
             fill
             src={streamUrl(video.id)}
             mimeType={video.mime_type}
-            poster={video.thumbnail_path ? thumbnailUrl(video.user_id, video.id) : undefined}
+            poster={video.thumbnail_path ? thumbnailUrl(video.user_id, video.id, { token: token ?? undefined }) : undefined}
+            videoId={video.id}
+            resumePositionSeconds={video.resume_position_seconds}
           />
         </div>
 
@@ -219,11 +218,17 @@ export default function VideoDetail() {
               <div className="space-y-3">
                 <h1 className="font-bold text-gray-900 text-base leading-snug">{video.title}</h1>
                 {video.description && (
-                  <p className="text-gray-600 text-sm">{video.description}</p>
+                  <Description text={video.description} className="text-gray-600 text-sm" />
                 )}
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span className="capitalize">{video.visibility}</span>
                   {video.category && <><span>·</span><span>{video.category}</span></>}
+                  {video.is_missing && (
+                    <>
+                      <span>·</span>
+                      <span className="text-red-600 font-medium">File missing</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50">

@@ -5,6 +5,8 @@ import { getCategoryShareVideo } from '../api/categoryShares'
 import { useAuthStore } from '../store/auth'
 import type { VideoPublic } from '../types'
 import TagBadge from '../components/TagBadge'
+import VideoPlayer from '../components/VideoPlayer'
+import Description from '../components/Description'
 
 export default function PublicVideoDetail() {
   const { id } = useParams<{ id: string }>()
@@ -24,14 +26,6 @@ export default function PublicVideoDetail() {
       .then(({ data }) => { setVideo(data); setLoading(false) })
       .catch(() => { setError('Video not found'); setLoading(false) })
   }, [id, catToken])
-
-  const src = id
-    ? token
-      ? `${streamUrl(id)}?token=${encodeURIComponent(token)}`
-      : catToken
-        ? `/api/videos/${id}/stream?cat_token=${encodeURIComponent(catToken)}`
-        : `/api/videos/${id}/stream`
-    : ''
 
   if (loading) {
     return (
@@ -62,18 +56,16 @@ export default function PublicVideoDetail() {
         </Link>
       </header>
       <div className="max-w-4xl mx-auto px-4 pb-8">
-        <video
-          controls
-          className="block mx-auto w-auto max-w-full max-h-[calc(100vh-8rem)] rounded-lg bg-black"
-          poster={video.thumbnail_path ? thumbnailUrl(video.user_id, video.id) : undefined}
-          preload="metadata"
-          autoPlay={false}
-        >
-          <source src={src} type={video.mime_type ?? 'video/mp4'} />
-        </video>
+        <VideoPlayer
+          src={streamUrl(id ?? '')}
+          mimeType={video.mime_type}
+          poster={video.thumbnail_path ? thumbnailUrl(video.user_id, video.id, { token: token ?? undefined, catToken: catToken ?? undefined }) : undefined}
+          token={token}
+          catToken={catToken}
+        />
         <div className="mt-4">
           <h1 className="text-xl font-bold text-white">{video.title}</h1>
-          {video.description && <p className="mt-2 text-gray-400 text-sm">{video.description}</p>}
+          {video.description && <Description text={video.description} className="mt-2 text-gray-400 text-sm" />}
           {video.category && <p className="mt-1 text-xs text-gray-500">{video.category}</p>}
           {(video.tags ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">

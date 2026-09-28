@@ -6,6 +6,8 @@ import type { User } from '../types'
 export default function Admin() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [actionError, setActionError] = useState('')
   const { user: me } = useAuthStore()
 
   const [showForm, setShowForm] = useState(false)
@@ -16,21 +18,31 @@ export default function Admin() {
   const [createError, setCreateError] = useState('')
 
   useEffect(() => {
-    listUsers().then(({ data }) => {
-      setUsers(Array.isArray(data) ? data : [])
-      setLoading(false)
-    })
+    listUsers()
+      .then(({ data }) => setUsers(Array.isArray(data) ? data : []))
+      .catch(() => setLoadError('Failed to load users'))
+      .finally(() => setLoading(false))
   }, [])
 
   const handleToggleAdmin = async (user: User) => {
-    const { data } = await updateUser(user.id, { is_admin: !user.is_admin })
-    setUsers((prev) => prev.map((u) => (u.id === data.id ? data : u)))
+    setActionError('')
+    try {
+      const { data } = await updateUser(user.id, { is_admin: !user.is_admin })
+      setUsers((prev) => prev.map((u) => (u.id === data.id ? data : u)))
+    } catch {
+      setActionError('Failed to update user role')
+    }
   }
 
   const handleDelete = async (user: User) => {
     if (!confirm(`Delete user "${user.username}"? All their videos and data will be removed.`)) return
-    await deleteUser(user.id)
-    setUsers((prev) => prev.filter((u) => u.id !== user.id))
+    setActionError('')
+    try {
+      await deleteUser(user.id)
+      setUsers((prev) => prev.filter((u) => u.id !== user.id))
+    } catch {
+      setActionError('Failed to delete user')
+    }
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -60,6 +72,10 @@ export default function Admin() {
     )
   }
 
+  if (loadError) {
+    return <p className="text-center py-20 text-red-600">{loadError}</p>
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
@@ -71,6 +87,12 @@ export default function Admin() {
           {showForm ? 'Cancel' : '+ New user'}
         </button>
       </div>
+
+      {actionError && (
+        <p className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {actionError}
+        </p>
+      )}
 
       {showForm && (
         <form onSubmit={handleCreate} className="mb-6 border rounded-lg p-4 bg-gray-50 space-y-3">

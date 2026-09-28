@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --color-surface: 15 15 18;
+  --color-surface-alt: 10 10 12;
+  --color-surface-raised: 24 24 28;
+  --color-border: 40 40 46;
+  --color-text: 237 237 240;
+  --color-text-muted: 156 156 166;
+  --color-accent: 129 140 248;
+  --color-accent-hover: 165 180 252;
+  --color-accent-soft: 49 46 92;
+}
+
+:root:not(.dark) {
+  color-scheme: light;
+  --color-surface: 255 255 255;
+  --color-surface-alt: 249 250 251;
+  --color-surface-raised: 255 255 255;
+  --color-border: 229 231 235;
+  --color-text: 17 24 39;
+  --color-text-muted: 107 114 128;
+  --color-accent: 79 70 229;
+  --color-accent-hover: 67 56 202;
+  --color-accent-soft: 224 231 255;
+}
+
+@layer base {
+  body {
+    @apply bg-surface-alt text-text;
+  }
+}

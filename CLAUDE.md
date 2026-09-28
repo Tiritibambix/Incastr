@@ -328,7 +328,11 @@ Used for local bind mount customization. Never commit secrets here.
 CI/CD publishes Docker image to Docker Hub as `tiritibambix/incastr`.
 
 Workflow:
-- Trigger: push to `main`
-- Steps: lint (ruff + eslint) → test → Docker build → push to Docker Hub
+- Trigger: push to any branch, or manual `workflow_dispatch`
+- A `check` job skips the rest of the workflow if the pushed commit was already built for that branch (commit hash cached via `actions/cache`), unless manually re-triggered
+- Steps: lint (ruff + eslint) → Docker build → push to Docker Hub
+- Image tags per branch push: `tiritibambix/incastr:<branch>-latest`, `:<branch>-<short-sha>`, `:<branch>-<yyyymmdd>` (slashes in branch names are replaced with `-`)
+- `main` additionally publishes `tiritibambix/incastr:latest` and `:<full-sha>` (used by the production `docker-compose.yml`)
+- This lets any branch be pulled and tested (e.g. `tiritibambix/incastr:feat-rewrite-latest`) before merging to `main`
 - Permissions: `contents: read` only
 - Pinned action SHAs (no floating tags)

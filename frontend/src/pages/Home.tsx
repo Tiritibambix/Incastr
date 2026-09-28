@@ -9,21 +9,8 @@ import { listCategories, listVideos } from '../api/videos'
 import type { CategoryShare, Tag, Video } from '../types'
 import VideoCard from '../components/VideoCard'
 import SearchBar from '../components/SearchBar'
-
-async function copyToClipboard(text: string) {
-  if (navigator.clipboard) {
-    await navigator.clipboard.writeText(text)
-  } else {
-    const el = document.createElement('textarea')
-    el.value = text
-    el.setAttribute('readonly', '')
-    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px'
-    document.body.appendChild(el)
-    el.select()
-    document.execCommand('copy')
-    document.body.removeChild(el)
-  }
-}
+import SortSelect from '../components/SortSelect'
+import { copyToClipboard } from '../utils/clipboard'
 
 function shareStatus(share: CategoryShare): 'active' | 'disabled' | 'expired' {
   if (!share.enabled) return 'disabled'
@@ -41,6 +28,9 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchField, setSearchField] = useState('')
+  const [sort, setSort] = useState('date_desc')
   const [shares, setShares] = useState<Map<string, CategoryShare>>(new Map())
   // Share modal
   const [shareModalCat, setShareModalCat] = useState<string | null>(null)
@@ -60,7 +50,7 @@ export default function Home() {
       .catch(() => {})
   }, [])
 
-  const loadVideos = useCallback(async (q = '', field = '', cat: string | null = null, pageNum = 1) => {
+  const loadVideos = useCallback(async (q = '', field = '', cat: string | null = null, pageNum = 1, sortValue = 'date_desc') => {
     setLoading(true)
     setError('')
     setSelectedTags([])
@@ -68,6 +58,7 @@ export default function Home() {
       const params: Record<string, string | number> = {
         limit: PAGE_SIZE,
         skip: (pageNum - 1) * PAGE_SIZE,
+        sort: sortValue,
       }
       if (q) { params.q = q; if (field) params.field = field }
       if (cat) params.category = cat
@@ -80,7 +71,7 @@ export default function Home() {
     }
   }, [])
 
-  useEffect(() => { loadVideos() }, [loadVideos])
+  useEffect(() => { loadVideos('', '', null, 1, 'date_desc') }, [loadVideos])
 
   const availableTags = useMemo(() => {
     const tagMap = new Map<string, Tag>()
@@ -98,13 +89,19 @@ export default function Home() {
   const selectCategory = (cat: string | null) => {
     setSelectedCategory(cat)
     setPage(1)
-    loadVideos('', '', cat, 1)
+    loadVideos(searchQuery, searchField, cat, 1, sort)
   }
 
   const goToPage = (p: number) => {
     setPage(p)
-    loadVideos('', '', selectedCategory, p)
+    loadVideos(searchQuery, searchField, selectedCategory, p, sort)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleSortChange = (value: string) => {
+    setSort(value)
+    setPage(1)
+    loadVideos(searchQuery, searchField, selectedCategory, 1, value)
   }
 
   const toggleTag = (tagId: string) =>
@@ -251,8 +248,16 @@ export default function Home() {
       {/* Main content */}
       <div className={hasSidebar ? 'pl-44' : ''}>
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="mb-4">
-            <SearchBar onSearch={(q, field) => { setPage(1); loadVideos(q, field, selectedCategory, 1) }} />
+          <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:items-start">
+            <div className="flex-1">
+              <SearchBar onSearch={(q, field) => {
+                setSearchQuery(q)
+                setSearchField(field)
+                setPage(1)
+                loadVideos(q, field, selectedCategory, 1, sort)
+              }} />
+            </div>
+            <SortSelect value={sort} onChange={handleSortChange} />
           </div>
 
           {loading && (
@@ -272,7 +277,7 @@ export default function Home() {
           )}
           {!loading && filteredVideos.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredVideos.map(v => <VideoCard key={v.id} video={v} />)}
+              {filteredVideos.map(v => <VideoCard key={v.id} video={v} to={`/videos/${v.id}`} variant="owner" />)}
             </div>
           )}
 
