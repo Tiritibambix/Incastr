@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  createCategoryShare,
   listCategoryShares,
   revokeCategoryShare,
   updateCategoryShare,
 } from '../api/categoryShares'
-import { listCategories, listUnlistedVideos, thumbnailUrl, updateVideo } from '../api/videos'
+import { listUnlistedVideos, thumbnailUrl, updateVideo } from '../api/videos'
 import type { CategoryShare, Video } from '../types'
 import { shareStatus } from '../utils/shareStatus'
 import { copyToClipboard } from '../utils/clipboard'
@@ -46,7 +45,6 @@ export default function Shares() {
   const { token } = useAuthStore()
 
   const [shares, setShares] = useState<CategoryShare[]>([])
-  const [categories, setCategories] = useState<string[]>([])
   const [sharesLoading, setSharesLoading] = useState(true)
   const [sharesError, setSharesError] = useState('')
   const [savingToken, setSavingToken] = useState<string | null>(null)
@@ -62,30 +60,11 @@ export default function Shares() {
       .then(({ data }) => setShares(Array.isArray(data) ? data : []))
       .catch(() => setSharesError('Failed to load share links'))
       .finally(() => setSharesLoading(false))
-    listCategories()
-      .then(({ data }) => setCategories(Array.isArray(data) ? data : []))
-      .catch(() => {})
     listUnlistedVideos()
       .then(({ data }) => setUnlisted(Array.isArray(data) ? data : []))
       .catch(() => setUnlistedError('Failed to load unlisted videos'))
       .finally(() => setUnlistedLoading(false))
   }, [])
-
-  const sharedCategories = new Set(shares.map((s) => s.category))
-  const unsharedCategories = categories.filter((c) => !sharedCategories.has(c))
-
-  const handleCreate = async (category: string) => {
-    setSavingToken(category)
-    setSharesError('')
-    try {
-      const { data } = await createCategoryShare(category)
-      setShares((prev) => [...prev, data])
-    } catch {
-      setSharesError('Failed to create share link')
-    } finally {
-      setSavingToken(null)
-    }
-  }
 
   const handleNameBlur = async (share: CategoryShare, value: string) => {
     const newName = value.trim() || null
@@ -152,8 +131,8 @@ export default function Shares() {
     setTimeout(() => setCopiedVideoId(null), 2000)
   }
 
-  const handleMakePrivate = async (video: Video) => {
-    if (!confirm('Make this video private? The share link will stop working.')) return
+  const handleDeleteShare = async (video: Video) => {
+    if (!confirm('Delete this share link? The video will become private and the link will stop working.')) return
     try {
       await updateVideo(video.id, { visibility: 'private' })
       setUnlisted((prev) => prev.filter((v) => v.id !== video.id))
@@ -240,28 +219,6 @@ export default function Shares() {
             })}
           </ul>
         )}
-
-        {unsharedCategories.length > 0 && (
-          <>
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-              Categories without a share link
-            </p>
-            <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden">
-              {unsharedCategories.map((cat) => (
-                <li key={cat} className="flex items-center justify-between px-4 py-3 bg-surface-raised">
-                  <span className="text-sm text-text truncate">{cat}</span>
-                  <button
-                    onClick={() => handleCreate(cat)}
-                    disabled={savingToken === cat}
-                    className="px-3 py-1.5 text-xs bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-colors"
-                  >
-                    {savingToken === cat ? 'Creating…' : 'Create share link'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
       </section>
 
       <section>
@@ -284,7 +241,10 @@ export default function Shares() {
             )}
             {unlisted.map((video) => (
               <li key={video.id} className="flex items-center gap-3 px-4 py-3 bg-surface-raised">
-                <div className="w-20 aspect-video bg-black rounded overflow-hidden flex-shrink-0">
+                <Link
+                  to={`/videos/${video.id}`}
+                  className="w-20 aspect-video bg-black rounded overflow-hidden flex-shrink-0 hover:opacity-80 transition-opacity"
+                >
                   {video.thumbnail_path && (
                     <img
                       src={thumbnailUrl(video.user_id, video.id, { token: token ?? undefined })}
@@ -292,7 +252,7 @@ export default function Shares() {
                       className="w-full h-full object-cover"
                     />
                   )}
-                </div>
+                </Link>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-text truncate">{video.title}</p>
                   {video.category && <p className="text-xs text-text-muted truncate">{video.category}</p>}
@@ -305,17 +265,11 @@ export default function Shares() {
                   >
                     {copiedVideoId === video.id ? <CheckIcon /> : <CopyIcon />}
                   </button>
-                  <Link
-                    to={`/videos/${video.id}`}
-                    className="px-2 py-1 text-xs border border-border text-text rounded hover:bg-surface transition-colors"
-                  >
-                    Manage
-                  </Link>
                   <button
-                    onClick={() => handleMakePrivate(video)}
+                    onClick={() => handleDeleteShare(video)}
                     className="px-2 py-1 text-xs border border-danger/30 text-danger rounded hover:bg-danger-soft transition-colors"
                   >
-                    Make private
+                    Delete share
                   </button>
                 </div>
               </li>

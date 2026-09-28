@@ -1,11 +1,12 @@
 import asyncio
+import html
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import get_settings
@@ -13,6 +14,7 @@ from backend.routers import (
     auth,
     category_shares,
     folders,
+    og,
     scan,
     tags,
     thumbnails,
@@ -116,6 +118,32 @@ async def _start_watchers():
             start_watcher(folder.user_id, folder.id, folder.path, loop)
 
 
+def _spa_page_with_meta(index_html: str, *, title: str, description: str, image_url: str, page_url: str) -> str:
+    """Inject Open Graph / Twitter Card meta tags into the SPA's index.html for social-media crawlers.
+
+    Real browsers get the identical bundle; React Router takes over on load. Crawlers (WhatsApp,
+    iMessage, Facebook, etc.) don't execute JS, so this server-rendered pass is what they see.
+    """
+    safe_title = html.escape(title)
+    safe_description = html.escape(description)
+    safe_image = html.escape(image_url)
+    safe_page_url = html.escape(page_url)
+    meta_tags = (
+        f'<meta property="og:title" content="{safe_title}" />\n'
+        f'<meta property="og:description" content="{safe_description}" />\n'
+        f'<meta property="og:image" content="{safe_image}" />\n'
+        f'<meta property="og:image:width" content="1200" />\n'
+        f'<meta property="og:image:height" content="630" />\n'
+        f'<meta property="og:url" content="{safe_page_url}" />\n'
+        f'<meta property="og:type" content="website" />\n'
+        f'<meta name="twitter:card" content="summary_large_image" />\n'
+        f'<meta name="twitter:title" content="{safe_title}" />\n'
+        f'<meta name="twitter:description" content="{safe_description}" />\n'
+        f'<meta name="twitter:image" content="{safe_image}" />\n'
+    )
+    return index_html.replace("<title>Incastr</title>", f"<title>{safe_title}</title>\n{meta_tags}")
+
+
 async def _auto_scan_loop(interval_minutes: int):
     from fastapi import BackgroundTasks
     from sqlalchemy import select
@@ -159,6 +187,7 @@ def create_app() -> FastAPI:
     app.include_router(scan.router)
     app.include_router(thumbnails.router)
     app.include_router(category_shares.router)
+    app.include_router(og.router)
 
     @app.get("/api/health")
     async def health():
@@ -176,6 +205,58 @@ def create_app() -> FastAPI:
                 @app.get(f"/{_path}")
                 async def _serve_static(p=_path):
                     return FileResponse(str(static_dir / p))
+
+        @app.get("/share/{token}")
+        async def share_page_meta(token: str, request: Request):
+            from sqlalchemy import select
+
+            from backend.database import AsyncSessionLocal
+            from backend.models.video import Video, Visibility
+
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(
+                    select(Video).where(Video.share_token == token, Video.visibility == Visibility.unlisted)
+                )
+                video = result.scalar_one_or_none()
+
+            index_html = (static_dir / "index.html").read_text(encoding="utf-8")
+            if not video:
+                return HTMLResponse(index_html)
+
+            base = str(request.base_url).rstrip("/")
+            page = _spa_page_with_meta(
+                index_html,
+                title=video.title,
+                description=video.description or "Watch this video on Incastr",
+                image_url=f"{base}/api/og/video/{token}.jpg",
+                page_url=f"{base}/share/{token}",
+            )
+            return HTMLResponse(page)
+
+        @app.get("/c/{token}")
+        async def category_share_page_meta(token: str, request: Request):
+            from sqlalchemy import select
+
+            from backend.database import AsyncSessionLocal
+            from backend.models.category_share import CategoryShare
+
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(select(CategoryShare).where(CategoryShare.token == token))
+                share = result.scalar_one_or_none()
+
+            index_html = (static_dir / "index.html").read_text(encoding="utf-8")
+            if not share or not share.is_valid():
+                return HTMLResponse(index_html)
+
+            base = str(request.base_url).rstrip("/")
+            page = _spa_page_with_meta(
+                index_html,
+                title=share.name or share.category,
+                description=f"A shared video collection: {share.category}",
+                image_url=f"{base}/api/og/category/{token}.jpg",
+                page_url=f"{base}/c/{token}",
+            )
+            return HTMLResponse(page)
 
         @app.exception_handler(404)
         async def spa_fallback(request: Request, exc: Exception):

@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 FFMPEG_TIMEOUT = 30  # seconds — kill ffmpeg if it hasn't finished
 SCRUB_FRAME_COUNT = 10  # hover-scrub preview frames, spread across 10%-90% of duration
+OG_WIDTH = 1200
+OG_HEIGHT = 630
 
 
 async def generate_thumbnail(video_path: str, user_id: str, video_id: str, duration: float | None = None) -> str | None:
@@ -109,6 +111,36 @@ async def generate_thumbnail_and_scrub(video_path: str, user_id: str, video_id: 
     thumb_path = await generate_thumbnail(video_path, user_id, video_id, duration=duration)
     scrub_count = await generate_scrub_frames(video_path, user_id, video_id, duration)
     return thumb_path, scrub_count
+
+
+async def generate_og_preview(source_path: str, dest_path: str) -> bool:
+    """Generate a 1200x630 social-media preview image (cover-cropped) from a source image."""
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", source_path,
+        "-vf", f"scale={OG_WIDTH}:{OG_HEIGHT}:force_original_aspect_ratio=increase,crop={OG_WIDTH}:{OG_HEIGHT}",
+        "-frames:v", "1",
+        "-q:v", "3",
+        dest_path,
+    ]
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=FFMPEG_TIMEOUT)
+        return proc.returncode == 0 and Path(dest_path).exists()
+    except asyncio.TimeoutError:
+        logger.warning("ffmpeg timed out generating OG preview for %s", source_path)
+        try:
+            proc.kill()
+            await proc.wait()
+        except Exception:
+            pass
+    except Exception as exc:
+        logger.debug("ffmpeg OG preview error for %s: %s", source_path, exc)
+    return False
 
 
 async def _get_duration(video_path: str) -> float | None:
