@@ -39,7 +39,14 @@ export const listPublicCategories = () =>
 export const getPublicVideo = (id: string) =>
   client.get<VideoPublic>(`/videos/public/${id}`)
 
-export const updateVideo = (id: string, data: { title?: string; description?: string; visibility?: Visibility }) =>
+export const updateVideo = (id: string, data: {
+  title?: string
+  description?: string
+  visibility?: Visibility
+  share_name?: string | null
+  share_enabled?: boolean
+  share_expires_at?: string | null
+}) =>
   client.patch<Video>(`/videos/${id}`, data)
 
 export const deleteVideo = (id: string, deleteFile = false) =>

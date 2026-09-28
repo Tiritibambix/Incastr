@@ -33,6 +33,9 @@ export interface Video {
   category: string | null
   visibility: Visibility
   share_token: string
+  share_name: string | null
+  share_enabled: boolean
+  share_expires_at: string | null
   thumbnail_path: string | null
   duration_seconds: number | null
   file_size_bytes: number | null

@@ -5,6 +5,7 @@ import { listCategories } from '../api/videos'
 import { listTags, createTag } from '../api/tags'
 import { useAuthStore } from '../store/auth'
 import { copyToClipboard } from '../utils/clipboard'
+import { shareStatus } from '../utils/shareStatus'
 import type { Video, Tag, Visibility } from '../types'
 import VideoPlayer from '../components/VideoPlayer'
 import TagBadge from '../components/TagBadge'
@@ -26,7 +27,9 @@ export default function VideoDetail() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [saving, setSaving] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [justCopied, setJustCopied] = useState(false)
+  const [savingShare, setSavingShare] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteFromDisk, setDeleteFromDisk] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -136,24 +139,77 @@ export default function VideoDetail() {
     }
   }
 
-  const handleShareClick = async () => {
+  const openShareModal = async () => {
     if (!video) return
-    let current = video
-    if (current.visibility !== 'unlisted') {
-      const { data } = await updateVideo(current.id, { visibility: 'unlisted' })
-      setVideo(data)
-      setVisibility(data.visibility)
-      current = data
+    if (video.visibility !== 'unlisted') {
+      setSavingShare(true)
+      try {
+        const { data } = await updateVideo(video.id, { visibility: 'unlisted' })
+        setVideo(data)
+        setVisibility(data.visibility)
+      } finally {
+        setSavingShare(false)
+      }
     }
-    const url = `${window.location.origin}/share/${current.share_token}`
+    setJustCopied(false)
+    setShareModalOpen(true)
+  }
+
+  const handleCopyShareLink = async () => {
+    if (!video) return
+    await copyToClipboard(`${window.location.origin}/share/${video.share_token}`)
+    setJustCopied(true)
+    setTimeout(() => setJustCopied(false), 2500)
+  }
+
+  const handleSetShareName = async (value: string) => {
+    if (!video) return
+    const trimmed = value.trim()
+    if (trimmed === (video.share_name ?? '')) return
+    setSavingShare(true)
     try {
-      await copyToClipboard(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
-    } catch {
-      // ignore
+      const { data } = await updateVideo(video.id, { share_name: trimmed || null })
+      setVideo(data)
+    } finally {
+      setSavingShare(false)
     }
   }
+
+  const handleToggleShareEnabled = async () => {
+    if (!video) return
+    setSavingShare(true)
+    try {
+      const { data } = await updateVideo(video.id, { share_enabled: !video.share_enabled })
+      setVideo(data)
+    } finally {
+      setSavingShare(false)
+    }
+  }
+
+  const handleSetShareExpiry = async (value: string) => {
+    if (!video) return
+    setSavingShare(true)
+    try {
+      const { data } = await updateVideo(video.id, {
+        share_expires_at: value ? new Date(value).toISOString() : null,
+      })
+      setVideo(data)
+    } finally {
+      setSavingShare(false)
+    }
+  }
+
+  const handleRevokeShare = async () => {
+    if (!video) return
+    if (!confirm('Remove this share link permanently?')) return
+    const { data } = await updateVideo(video.id, { visibility: 'private' })
+    setVideo(data)
+    setVisibility(data.visibility)
+    setShareModalOpen(false)
+  }
+
+  const shareExpiryInputValue = () =>
+    video?.share_expires_at ? new Date(video.share_expires_at).toISOString().slice(0, 16) : ''
 
   if (loading) {
     return (
@@ -166,6 +222,7 @@ export default function VideoDetail() {
   if (!video) return <p className="text-center py-20 text-text-muted">Video not found</p>
 
   const unattachedTags = allTags.filter((t) => !(video.tags ?? []).find((vt) => vt.id === t.id))
+  const videoShareStatus = shareStatus(video.share_enabled, video.share_expires_at)
 
   return (
     <>
@@ -242,14 +299,18 @@ export default function VideoDetail() {
                     Edit
                   </button>
                   <button
-                    onClick={handleShareClick}
-                    className={`px-3 py-1.5 text-xs rounded-lg border transition-all duration-300 ${
-                      copied
-                        ? 'bg-success-soft text-success border-success/30 scale-105'
+                    onClick={openShareModal}
+                    disabled={savingShare}
+                    title={video.visibility === 'unlisted' ? 'Manage share' : 'Share video'}
+                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors disabled:opacity-50 ${
+                      video.visibility === 'unlisted'
+                        ? videoShareStatus === 'active' ? 'border-accent/30 text-accent bg-accent-soft'
+                          : videoShareStatus === 'disabled' ? 'border-border text-text-muted'
+                          : 'border-warning/30 text-warning bg-warning-soft'
                         : 'border-border text-text hover:bg-surface'
                     }`}
                   >
-                    {copied ? '✓ Copied!' : 'Share link'}
+                    {video.visibility === 'unlisted' ? 'Share link' : 'Share'}
                   </button>
                   <button
                     onClick={() => { setDeleteFromDisk(false); setDeleteError(''); setShowDeleteModal(true) }}
@@ -353,6 +414,97 @@ export default function VideoDetail() {
           </div>
         </aside>
       </div>
+
+      {shareModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShareModalOpen(false)}
+        >
+          <div
+            className="bg-surface-raised rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <input
+                key={video.id}
+                type="text"
+                defaultValue={video.share_name ?? ''}
+                placeholder={video.title}
+                onBlur={e => handleSetShareName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                className="flex-1 min-w-0 font-semibold text-text bg-transparent rounded px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-accent placeholder:font-normal placeholder:text-text-muted"
+              />
+              <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
+                videoShareStatus === 'active' ? 'bg-success-soft text-success'
+                : videoShareStatus === 'disabled' ? 'bg-surface text-text-muted'
+                : 'bg-warning-soft text-warning'
+              }`}>
+                {videoShareStatus === 'active' ? 'Active' : videoShareStatus === 'disabled' ? 'Disabled' : 'Expired'}
+              </span>
+            </div>
+
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={handleCopyShareLink}
+                disabled={videoShareStatus !== 'active'}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                  justCopied ? 'bg-success-soft text-success border-success/30'
+                  : videoShareStatus === 'active' ? 'bg-accent-soft text-accent border-accent/30 hover:bg-accent-soft/70'
+                  : 'bg-surface text-text-muted border-border cursor-not-allowed'
+                }`}
+              >
+                {justCopied
+                  ? <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>Copied!</>
+                  : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>Copy link</>
+                }
+              </button>
+              <button
+                onClick={handleToggleShareEnabled}
+                disabled={savingShare}
+                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
+                  video.share_enabled ? 'border-border text-text-muted hover:bg-surface' : 'border-accent/30 text-accent bg-accent-soft hover:bg-accent-soft/70'
+                }`}
+              >
+                {video.share_enabled ? 'Disable' : 'Enable'}
+              </button>
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-sm text-text-muted mb-1.5">Expiry date (optional)</label>
+              <input
+                type="datetime-local"
+                value={shareExpiryInputValue()}
+                onChange={e => handleSetShareExpiry(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+              {video.share_expires_at && (
+                <button
+                  onClick={() => handleSetShareExpiry('')}
+                  className="mt-1.5 text-xs text-text-muted hover:text-danger"
+                >
+                  Clear expiry
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-between items-center">
+              <button
+                onClick={handleRevokeShare}
+                className="text-sm text-danger hover:opacity-80 transition-colors"
+              >
+                Delete share link
+              </button>
+              <button
+                onClick={() => setShareModalOpen(false)}
+                className="px-4 py-2 text-sm border border-border text-text rounded-lg hover:bg-surface"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

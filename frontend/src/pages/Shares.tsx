@@ -54,6 +54,7 @@ export default function Shares() {
   const [unlistedLoading, setUnlistedLoading] = useState(true)
   const [unlistedError, setUnlistedError] = useState('')
   const [copiedVideoId, setCopiedVideoId] = useState<string | null>(null)
+  const [savingVideoId, setSavingVideoId] = useState<string | null>(null)
 
   useEffect(() => {
     listCategoryShares()
@@ -125,21 +126,64 @@ export default function Shares() {
   const expiryInputValue = (share: CategoryShare) =>
     share.expires_at ? new Date(share.expires_at).toISOString().slice(0, 16) : ''
 
+  const handleVideoNameBlur = async (video: Video, value: string) => {
+    const newName = value.trim() || null
+    if (newName === video.share_name) return
+    setSavingVideoId(video.id)
+    try {
+      const { data } = await updateVideo(video.id, { share_name: newName })
+      setUnlisted((prev) => prev.map((v) => (v.id === video.id ? data : v)))
+    } catch {
+      setUnlistedError('Failed to update name')
+    } finally {
+      setSavingVideoId(null)
+    }
+  }
+
+  const handleVideoToggleEnabled = async (video: Video) => {
+    setSavingVideoId(video.id)
+    try {
+      const { data } = await updateVideo(video.id, { share_enabled: !video.share_enabled })
+      setUnlisted((prev) => prev.map((v) => (v.id === video.id ? data : v)))
+    } catch {
+      setUnlistedError('Failed to update share')
+    } finally {
+      setSavingVideoId(null)
+    }
+  }
+
+  const handleVideoSetExpiry = async (video: Video, value: string) => {
+    setSavingVideoId(video.id)
+    try {
+      const { data } = await updateVideo(video.id, {
+        share_expires_at: value ? new Date(value).toISOString() : null,
+      })
+      setUnlisted((prev) => prev.map((v) => (v.id === video.id ? data : v)))
+    } catch {
+      setUnlistedError('Failed to update expiry')
+    } finally {
+      setSavingVideoId(null)
+    }
+  }
+
+  const handleRevokeVideoShare = async (video: Video) => {
+    if (!confirm('Remove this share link permanently?')) return
+    try {
+      await updateVideo(video.id, { visibility: 'private' })
+      setUnlisted((prev) => prev.filter((v) => v.id !== video.id))
+    } catch {
+      setUnlistedError('Failed to delete share link')
+    }
+  }
+
   const handleCopyVideoLink = async (video: Video) => {
     await copyToClipboard(`${window.location.origin}/share/${video.share_token}`)
     setCopiedVideoId(video.id)
     setTimeout(() => setCopiedVideoId(null), 2000)
   }
 
-  const handleDeleteShare = async (video: Video) => {
-    if (!confirm('Delete this share link? The video will become private and the link will stop working.')) return
-    try {
-      await updateVideo(video.id, { visibility: 'private' })
-      setUnlisted((prev) => prev.filter((v) => v.id !== video.id))
-    } catch {
-      setUnlistedError('Failed to update video')
-    }
-  }
+  const videoExpiryInputValue = (video: Video) =>
+    video.share_expires_at ? new Date(video.share_expires_at).toISOString().slice(0, 16) : ''
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -164,7 +208,7 @@ export default function Shares() {
               <li className="px-4 py-3 text-sm text-text-muted">No share links yet</li>
             )}
             {shares.map((share) => {
-              const status = shareStatus(share)
+              const status = shareStatus(share.enabled, share.expires_at)
               return (
                 <li key={share.token} className="flex flex-wrap items-center gap-3 px-4 py-3 bg-surface-raised">
                   <div className="min-w-0 flex-1">
@@ -239,41 +283,74 @@ export default function Shares() {
             {unlisted.length === 0 && (
               <li className="px-4 py-3 text-sm text-text-muted">No unlisted videos</li>
             )}
-            {unlisted.map((video) => (
-              <li key={video.id} className="flex items-center gap-3 px-4 py-3 bg-surface-raised">
-                <Link
-                  to={`/videos/${video.id}`}
-                  className="w-20 aspect-video bg-black rounded overflow-hidden flex-shrink-0 hover:opacity-80 transition-opacity"
-                >
-                  {video.thumbnail_path && (
-                    <img
-                      src={thumbnailUrl(video.user_id, video.id, { token: token ?? undefined })}
-                      alt=""
-                      className="w-full h-full object-cover"
+            {unlisted.map((video) => {
+              const status = shareStatus(video.share_enabled, video.share_expires_at)
+              return (
+                <li key={video.id} className="flex flex-wrap items-center gap-3 px-4 py-3 bg-surface-raised">
+                  <Link
+                    to={`/videos/${video.id}`}
+                    className="w-20 aspect-video bg-black rounded overflow-hidden flex-shrink-0 hover:opacity-80 transition-opacity"
+                  >
+                    {video.thumbnail_path && (
+                      <img
+                        src={thumbnailUrl(video.user_id, video.id, { token: token ?? undefined })}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <input
+                      key={video.id}
+                      defaultValue={video.share_name ?? ''}
+                      placeholder={video.title}
+                      onBlur={(e) => handleVideoNameBlur(video, e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                      className="w-full bg-transparent font-medium text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent rounded px-1 -mx-1"
                     />
-                  )}
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text truncate">{video.title}</p>
-                  {video.category && <p className="text-xs text-text-muted truncate">{video.category}</p>}
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => handleCopyVideoLink(video)}
-                    title="Copy link"
-                    className="p-1.5 rounded hover:bg-surface text-text-muted hover:text-accent transition-colors"
-                  >
-                    {copiedVideoId === video.id ? <CheckIcon /> : <CopyIcon />}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteShare(video)}
-                    className="px-2 py-1 text-xs border border-danger/30 text-danger rounded hover:bg-danger-soft transition-colors"
-                  >
-                    Delete share
-                  </button>
-                </div>
-              </li>
-            ))}
+                    <p className="text-xs text-text-muted truncate px-1">
+                      {video.category ? `${video.title} · ${video.category}` : video.title}
+                    </p>
+                  </div>
+                  <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[status]}`}>
+                    {STATUS_LABEL[status]}
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => handleCopyVideoLink(video)}
+                      title="Copy link"
+                      className="p-1.5 rounded hover:bg-surface text-text-muted hover:text-accent transition-colors"
+                    >
+                      {copiedVideoId === video.id ? <CheckIcon /> : <CopyIcon />}
+                    </button>
+                    <input
+                      type="datetime-local"
+                      value={videoExpiryInputValue(video)}
+                      onChange={(e) => handleVideoSetExpiry(video, e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      title="Expiry date"
+                      className="px-2 py-1 text-xs bg-surface border border-border rounded text-text focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                    <button
+                      onClick={() => handleVideoToggleEnabled(video)}
+                      disabled={savingVideoId === video.id}
+                      className="px-2 py-1 text-xs border border-border text-text rounded hover:bg-surface disabled:opacity-50 transition-colors"
+                    >
+                      {video.share_enabled ? 'Disable' : 'Enable'}
+                    </button>
+                    <button
+                      onClick={() => handleRevokeVideoShare(video)}
+                      title="Delete share link"
+                      className="p-1.5 rounded hover:bg-danger-soft text-text-muted hover:text-danger transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>

@@ -121,12 +121,22 @@ export default function Home() {
   }
 
   const activeShare = shareModalCat ? shares.get(shareModalCat) : undefined
-  const activeStatus = activeShare ? shareStatus(activeShare) : null
+  const activeStatus = activeShare ? shareStatus(activeShare.enabled, activeShare.expires_at) : null
 
   const handleCopyLink = async (share: CategoryShare) => {
     await copyToClipboard(`${window.location.origin}/c/${share.token}`)
     setJustCopied(true)
     setTimeout(() => setJustCopied(false), 2500)
+  }
+
+  const handleSetName = async (share: CategoryShare, name: string) => {
+    const trimmed = name.trim()
+    if (trimmed === (share.name ?? '')) return
+    setSavingShare(true)
+    try {
+      const { data } = await updateCategoryShare(share.token, { name: trimmed || null })
+      setShares(prev => new Map(prev).set(share.category, data))
+    } finally { setSavingShare(false) }
   }
 
   const handleToggleEnabled = async (share: CategoryShare) => {
@@ -185,7 +195,7 @@ export default function Home() {
             <ul className="space-y-0.5 mb-4">
               {categories.map(cat => {
                 const share = shares.get(cat)
-                const status = share ? shareStatus(share) : null
+                const status = share ? shareStatus(share.enabled, share.expires_at) : null
                 return (
                   <li key={cat}>
                     <div className={`flex items-center rounded-lg group ${selectedCategory === cat ? 'bg-accent-soft' : 'hover:bg-surface'}`}>
@@ -300,9 +310,17 @@ export default function Home() {
             className="bg-surface-raised rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-text">{activeShare?.name || shareModalCat}</h2>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <input
+                key={activeShare.token}
+                type="text"
+                defaultValue={activeShare.name ?? ''}
+                placeholder={shareModalCat ?? ''}
+                onBlur={e => handleSetName(activeShare, e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                className="flex-1 min-w-0 font-semibold text-text bg-transparent rounded px-1 -mx-1 focus:outline-none focus:ring-2 focus:ring-accent placeholder:font-normal placeholder:text-text-muted"
+              />
+              <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
                 activeStatus === 'active' ? 'bg-success-soft text-success'
                 : activeStatus === 'disabled' ? 'bg-surface text-text-muted'
                 : 'bg-warning-soft text-warning'

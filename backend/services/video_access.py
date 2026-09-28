@@ -51,13 +51,11 @@ async def resolve_video_access(
 
     if video is None and share_token:
         result = await db.execute(
-            select(Video).where(
-                Video.id == video_id,
-                Video.share_token == share_token,
-                Video.visibility == Visibility.unlisted,
-            )
+            select(Video).where(Video.id == video_id, Video.share_token == share_token)
         )
-        video = result.scalar_one_or_none()
+        candidate = result.scalar_one_or_none()
+        if candidate and candidate.is_share_valid():
+            video = candidate
 
     if video is None:
         result = await db.execute(

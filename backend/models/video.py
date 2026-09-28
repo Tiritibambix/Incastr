@@ -36,6 +36,9 @@ class Video(Base):
     category: Mapped[str | None] = mapped_column(String, nullable=True)
     visibility: Mapped[Visibility] = mapped_column(sa.Enum(Visibility), default=Visibility.private)
     share_token: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    share_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    share_enabled: Mapped[bool] = mapped_column(sa.Boolean, default=True, nullable=False)
+    share_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     thumbnail_path: Mapped[str | None] = mapped_column(String, nullable=True)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     file_size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -48,3 +51,10 @@ class Video(Base):
     user: Mapped["User"] = relationship("User", back_populates="videos")
     folder: Mapped["Folder"] = relationship("Folder", back_populates="videos")
     tags: Mapped[list["Tag"]] = relationship("Tag", secondary=video_tags, back_populates="videos")
+
+    def is_share_valid(self) -> bool:
+        if self.visibility != Visibility.unlisted or not self.share_enabled:
+            return False
+        if self.share_expires_at and self.share_expires_at < datetime.utcnow():
+            return False
+        return True

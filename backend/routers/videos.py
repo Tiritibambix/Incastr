@@ -234,11 +234,11 @@ async def list_videos(
 async def get_shared_video(share_token: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Video)
-        .where(Video.share_token == share_token, Video.visibility == Visibility.unlisted)
+        .where(Video.share_token == share_token)
         .options(selectinload(Video.tags))
     )
     video = result.scalar_one_or_none()
-    if not video:
+    if not video or not video.is_share_valid():
         raise not_found("Video not found")
     return video
 
@@ -246,10 +246,10 @@ async def get_shared_video(share_token: str, db: AsyncSession = Depends(get_db))
 @router.get("/share/{share_token}/stream")
 async def stream_shared_video(share_token: str, request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Video).where(Video.share_token == share_token, Video.visibility == Visibility.unlisted)
+        select(Video).where(Video.share_token == share_token)
     )
     video = result.scalar_one_or_none()
-    if not video:
+    if not video or not video.is_share_valid():
         raise not_found("Video not found")
 
     filepath = video.filepath
@@ -338,13 +338,21 @@ async def update_video(
         video.title = body.title
     if body.description is not None:
         video.description = body.description
+    if "share_name" in body.model_fields_set:
+        video.share_name = body.share_name
+    if "share_expires_at" in body.model_fields_set:
+        video.share_expires_at = body.share_expires_at
+    if body.share_enabled is not None:
+        video.share_enabled = body.share_enabled
     if body.visibility is not None:
         becomes_unlisted = body.visibility == Visibility.unlisted and video.visibility != Visibility.unlisted
         video.visibility = body.visibility
-        if becomes_unlisted and video.thumbnail_path:
-            from backend.routers.og import warm_video_og_preview
+        if becomes_unlisted:
+            video.share_enabled = True
+            if video.thumbnail_path:
+                from backend.routers.og import warm_video_og_preview
 
-            background_tasks.add_task(warm_video_og_preview, video.thumbnail_path, video.id)
+                background_tasks.add_task(warm_video_og_preview, video.thumbnail_path, video.id)
     return video
 
 

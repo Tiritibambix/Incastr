@@ -9,7 +9,7 @@ from backend.config import get_settings
 from backend.core.exceptions import not_found
 from backend.database import get_db
 from backend.models.category_share import CategoryShare
-from backend.models.video import Video, Visibility
+from backend.models.video import Video
 from backend.services.thumbnail import generate_og_preview
 
 router = APIRouter(prefix="/api/og", tags=["og"])
@@ -17,11 +17,9 @@ router = APIRouter(prefix="/api/og", tags=["og"])
 
 @router.api_route("/video/{share_token}.jpg", methods=["GET", "HEAD"])
 async def get_video_og_image(share_token: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Video).where(Video.share_token == share_token, Video.visibility == Visibility.unlisted)
-    )
+    result = await db.execute(select(Video).where(Video.share_token == share_token))
     video = result.scalar_one_or_none()
-    if not video or not video.thumbnail_path:
+    if not video or not video.is_share_valid() or not video.thumbnail_path:
         raise not_found("Preview not available")
     cache_path = await ensure_cached_preview(video.thumbnail_path, f"video_{video.id}")
     if not cache_path:

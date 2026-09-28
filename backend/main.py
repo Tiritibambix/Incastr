@@ -218,22 +218,20 @@ def create_app() -> FastAPI:
             from sqlalchemy import select
 
             from backend.database import AsyncSessionLocal
-            from backend.models.video import Video, Visibility
+            from backend.models.video import Video
 
             async with AsyncSessionLocal() as db:
-                result = await db.execute(
-                    select(Video).where(Video.share_token == token, Video.visibility == Visibility.unlisted)
-                )
+                result = await db.execute(select(Video).where(Video.share_token == token))
                 video = result.scalar_one_or_none()
 
             index_html = (static_dir / "index.html").read_text(encoding="utf-8")
-            if not video:
+            if not video or not video.is_share_valid():
                 return HTMLResponse(index_html)
 
             base = str(request.base_url).rstrip("/")
             page = _spa_page_with_meta(
                 index_html,
-                title=video.title,
+                title=video.share_name or video.title,
                 description=video.description,
                 image_url=f"{base}/api/og/video/{token}.jpg",
                 page_url=f"{base}/share/{token}",
