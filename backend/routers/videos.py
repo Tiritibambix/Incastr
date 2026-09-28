@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,6 +21,7 @@ from backend.models.watch_history import WatchHistory
 from backend.models.watch_progress import WatchProgress
 from backend.schemas.video import (
     DuplicateGroup,
+    Page,
     VideoMoveCategory,
     VideoOut,
     VideoPublic,
@@ -40,7 +41,7 @@ router = APIRouter(prefix="/api/videos", tags=["videos"])
 CHUNK_SIZE = 1024 * 1024  # 1 MB
 
 
-@router.get("/public", response_model=list[VideoPublic])
+@router.get("/public", response_model=Page[VideoPublic])
 async def list_public_videos(
     q: str | None = None,
     category: str | None = None,
@@ -58,9 +59,13 @@ async def list_public_videos(
         stmt = stmt.where(Video.title.ilike(f"%{q}%"))
     if category:
         stmt = stmt.where(Video.category == category)
+
+    count_result = await db.execute(select(func.count()).select_from(stmt.subquery()))
+    total = count_result.scalar_one()
+
     stmt = apply_sort(stmt, sort).offset(skip).limit(limit)
     result = await db.execute(stmt)
-    return list(result.scalars().all())
+    return Page(items=list(result.scalars().all()), total=total)
 
 
 @router.get("/public/categories")
@@ -135,26 +140,51 @@ async def list_duplicate_videos(
     ]
 
 
-@router.get("/history", response_model=list[WatchHistoryEntry])
+@router.get("/unlisted", response_model=list[VideoOut])
+async def list_unlisted_videos(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Video)
+        .where(
+            Video.user_id == current_user.id,
+            Video.visibility == Visibility.unlisted,
+            ~Video.is_missing,
+        )
+        .options(selectinload(Video.tags))
+        .order_by(Video.updated_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+@router.get("/history", response_model=Page[WatchHistoryEntry])
 async def list_watch_history(
     skip: int = 0,
     limit: int = 16,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
+    base_stmt = (
         select(WatchHistory, Video)
         .join(Video, Video.id == WatchHistory.video_id)
         .where(WatchHistory.user_id == current_user.id, ~Video.is_missing)
+    )
+    count_result = await db.execute(select(func.count()).select_from(base_stmt.subquery()))
+    total = count_result.scalar_one()
+
+    result = await db.execute(
+        base_stmt
         .options(selectinload(Video.tags))
         .order_by(WatchHistory.watched_at.desc())
         .offset(skip)
         .limit(limit)
     )
-    return [
+    items = [
         WatchHistoryEntry(watched_at=entry.watched_at, video=VideoOut.model_validate(video))
         for entry, video in result.all()
     ]
+    return Page(items=items, total=total)
 
 
 @router.delete("/history/{video_id}", status_code=204)
@@ -184,7 +214,7 @@ async def clear_watch_history(
         await db.delete(entry)
 
 
-@router.get("", response_model=list[VideoOut])
+@router.get("", response_model=Page[VideoOut])
 async def list_videos(
     q: str | None = None,
     field: str | None = None,
@@ -196,7 +226,8 @@ async def list_videos(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await search_videos(db, current_user.id, q=q, field=field, visibility=visibility, category=category, sort=sort, skip=skip, limit=limit)
+    items, total = await search_videos(db, current_user.id, q=q, field=field, visibility=visibility, category=category, sort=sort, skip=skip, limit=limit)
+    return Page(items=items, total=total)
 
 
 @router.get("/share/{share_token}", response_model=VideoPublic)

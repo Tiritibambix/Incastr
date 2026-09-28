@@ -51,26 +51,26 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center text-indigo-600 mb-6">Incastr</h1>
+    <div className="min-h-screen flex items-center justify-center bg-surface-alt">
+      <div className="bg-surface-raised rounded-2xl shadow-lg p-8 w-full max-w-sm">
+        <h1 className="text-2xl font-bold text-center text-accent mb-6">Incastr</h1>
 
         {isFirstRun && (
-          <div className="mb-4 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-700">
+          <div className="mb-4 px-3 py-2 bg-accent-soft border border-accent/30 rounded-lg text-sm text-accent">
             First run — create your admin account below.
           </div>
         )}
 
         {(isFirstRun || registrationOpen) && (
-          <div className="flex mb-6 border-b">
+          <div className="flex mb-6 border-b border-border">
             <button
-              className={`flex-1 pb-2 text-sm font-medium ${mode === 'login' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
+              className={`flex-1 pb-2 text-sm font-medium ${mode === 'login' ? 'border-b-2 border-accent text-accent' : 'text-text-muted'}`}
               onClick={() => setMode('login')}
             >
               Login
             </button>
             <button
-              className={`flex-1 pb-2 text-sm font-medium ${mode === 'register' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500'}`}
+              className={`flex-1 pb-2 text-sm font-medium ${mode === 'register' ? 'border-b-2 border-accent text-accent' : 'text-text-muted'}`}
               onClick={() => setMode('register')}
             >
               Register
@@ -80,42 +80,42 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <label className="block text-sm font-medium text-text">Username</label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
           {mode === 'register' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <label className="block text-sm font-medium text-text">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <label className="block text-sm font-medium text-text">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full py-2 px-4 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50"
           >
             {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create account'}
           </button>

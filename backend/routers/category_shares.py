@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -12,7 +12,7 @@ from backend.database import get_db
 from backend.models.category_share import CategoryShare
 from backend.models.user import User
 from backend.models.video import Video
-from backend.schemas.video import VideoPublic
+from backend.schemas.video import Page, VideoPublic
 from backend.services.sort import apply_sort
 
 router = APIRouter(prefix="/api/category-shares", tags=["category-shares"])
@@ -20,10 +20,12 @@ router = APIRouter(prefix="/api/category-shares", tags=["category-shares"])
 
 class CategoryShareCreate(BaseModel):
     category: str
+    name: str | None = None
     expires_at: datetime | None = None
 
 
 class CategoryShareUpdate(BaseModel):
+    name: str | None = None
     enabled: bool | None = None
     expires_at: datetime | None = None
 
@@ -31,6 +33,7 @@ class CategoryShareUpdate(BaseModel):
 class CategoryShareOut(BaseModel):
     token: str
     category: str
+    name: str | None
     enabled: bool
     expires_at: datetime | None
     created_at: datetime
@@ -66,6 +69,7 @@ async def create_or_get_share(
         share = CategoryShare(
             user_id=current_user.id,
             category=body.category,
+            name=body.name,
             expires_at=body.expires_at,
         )
         db.add(share)
@@ -89,6 +93,8 @@ async def update_share(
     share = result.scalar_one_or_none()
     if not share:
         raise not_found("Share not found")
+    if "name" in body.model_fields_set:
+        share.name = body.name
     if body.enabled is not None:
         share.enabled = body.enabled
     if "expires_at" in body.model_fields_set:
@@ -134,7 +140,7 @@ async def get_shared_category_video(
     return video
 
 
-@router.get("/{token}/videos", response_model=list[VideoPublic])
+@router.get("/{token}/videos", response_model=Page[VideoPublic])
 async def get_shared_category_videos(
     token: str,
     sort: str | None = None,
@@ -152,9 +158,13 @@ async def get_shared_category_videos(
         )
         .options(selectinload(Video.tags))
     )
+
+    count_result = await db.execute(select(func.count()).select_from(stmt.subquery()))
+    total = count_result.scalar_one()
+
     stmt = apply_sort(stmt, sort).offset(skip).limit(limit)
     videos_result = await db.execute(stmt)
-    return list(videos_result.scalars().all())
+    return Page(items=list(videos_result.scalars().all()), total=total)
 
 
 async def _get_valid_share(token: str, db: AsyncSession) -> CategoryShare:

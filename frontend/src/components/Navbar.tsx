@@ -18,10 +18,13 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <Link to="/library" className="text-sm text-text-muted hover:text-accent transition-colors">Library</Link>
         <Link to="/history" className="text-sm text-text-muted hover:text-accent transition-colors">History</Link>
+        <Link to="/shares" className="text-sm text-text-muted hover:text-accent transition-colors">Shares</Link>
         <Link to="/settings" className="text-sm text-text-muted hover:text-accent transition-colors">Settings</Link>
         {user?.is_admin && (
           <Link to="/admin" className="text-sm text-text-muted hover:text-accent transition-colors">Admin</Link>
         )}
+        <span className="text-sm text-text-muted">{user?.username}</span>
+        <button onClick={handleLogout} className="text-sm text-text-muted hover:text-danger transition-colors">Logout</button>
         <button
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -37,8 +40,6 @@ export default function Navbar() {
             </svg>
           )}
         </button>
-        <span className="text-sm text-text-muted">{user?.username}</span>
-        <button onClick={handleLogout} className="text-sm text-text-muted hover:text-red-400 transition-colors">Logout</button>
       </div>
     </nav>
   )

@@ -31,9 +31,9 @@ function describeScanResult(data: ScanResult): ScanStatus {
 }
 
 const STATUS_STYLES: Record<StatusLevel, string> = {
-  success: 'text-green-700 bg-green-50 border-green-200',
-  warning: 'text-amber-700 bg-amber-50 border-amber-200',
-  error: 'text-red-700 bg-red-50 border-red-200',
+  success: 'text-success bg-success-soft border-success/30',
+  warning: 'text-warning bg-warning-soft border-warning/30',
+  error: 'text-danger bg-danger-soft border-danger/30',
 }
 
 export default function Settings() {
@@ -147,16 +147,16 @@ export default function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold text-text mb-6">Settings</h1>
 
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Video Folders</h2>
+          <h2 className="text-lg font-semibold text-text">Video Folders</h2>
           <div className="flex gap-2">
             <button
               onClick={handleRegenerateThumbnails}
               disabled={loading}
-              className="px-4 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50"
+              className="px-4 py-1.5 border border-border text-text text-sm rounded-lg hover:bg-surface disabled:opacity-50"
               title="Generate missing thumbnails for all indexed videos"
             >
               {loading ? '…' : 'Regenerate thumbnails'}
@@ -164,7 +164,7 @@ export default function Settings() {
             <button
               onClick={handleScanAll}
               disabled={loading}
-              className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-accent text-white text-sm rounded-lg hover:bg-accent-hover disabled:opacity-50"
             >
               {loading ? 'Scanning...' : 'Scan all'}
             </button>
@@ -177,39 +177,39 @@ export default function Settings() {
           </p>
         )}
         {folderError && (
-          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+          <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2 mb-4">
             {folderError}
           </p>
         )}
 
         {initialLoading ? (
           <div className="flex justify-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
           </div>
         ) : loadError ? (
-          <p className="text-sm text-red-600 text-center py-6">{loadError}</p>
+          <p className="text-sm text-danger text-center py-6">{loadError}</p>
         ) : (
-          <ul className="divide-y border rounded-lg overflow-hidden mb-4">
+          <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden mb-4">
             {folders.length === 0 && (
-              <li className="px-4 py-3 text-sm text-gray-500">No folders configured</li>
+              <li className="px-4 py-3 text-sm text-text-muted">No folders configured</li>
             )}
             {folders.map((f) => (
-              <li key={f.id} className="flex items-center justify-between px-4 py-3 bg-white">
+              <li key={f.id} className="flex items-center justify-between px-4 py-3 bg-surface-raised">
                 <div>
-                  <p className="font-medium text-sm text-gray-900">{f.label}</p>
-                  <p className="text-xs text-gray-500 font-mono">{f.path}</p>
+                  <p className="font-medium text-sm text-text">{f.label}</p>
+                  <p className="text-xs text-text-muted font-mono">{f.path}</p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleScanOne(f.id)}
                     disabled={loading}
-                    className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+                    className="px-2 py-1 text-xs border border-border text-text rounded hover:bg-surface disabled:opacity-50"
                   >
                     Scan
                   </button>
                   <button
                     onClick={() => handleDeleteFolder(f.id)}
-                    className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50"
+                    className="px-2 py-1 text-xs border border-danger/30 text-danger rounded hover:bg-danger-soft"
                   >
                     Remove
                   </button>
@@ -225,18 +225,18 @@ export default function Settings() {
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             placeholder="Label"
-            className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-32 px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <input
             type="text"
             value={newPath}
             onChange={(e) => setNewPath(e.target.value)}
             placeholder="/media/videos"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text font-mono focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700"
+            className="px-4 py-2 bg-accent text-white text-sm rounded-lg hover:bg-accent-hover"
           >
             Add
           </button>
@@ -244,46 +244,46 @@ export default function Settings() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Possible Duplicates</h2>
+        <h2 className="text-lg font-semibold text-text mb-4">Possible Duplicates</h2>
 
         {duplicatesError && (
-          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+          <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2 mb-4">
             {duplicatesError}
           </p>
         )}
 
         {duplicatesLoading ? (
           <div className="flex justify-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
           </div>
         ) : duplicates.length === 0 ? (
-          <p className="text-sm text-gray-500">No duplicate videos found.</p>
+          <p className="text-sm text-text-muted">No duplicate videos found.</p>
         ) : (
           <div className="space-y-4">
             {duplicates.map((group) => (
-              <div key={`${group.filename}-${group.file_size_bytes}`} className="border rounded-lg overflow-hidden">
-                <div className="px-4 py-2 bg-gray-50 border-b">
-                  <p className="font-medium text-sm text-gray-900 font-mono truncate">{group.filename}</p>
-                  <p className="text-xs text-gray-500">{formatFileSize(group.file_size_bytes)} &middot; {group.videos.length} copies</p>
+              <div key={`${group.filename}-${group.file_size_bytes}`} className="border border-border rounded-lg overflow-hidden">
+                <div className="px-4 py-2 bg-surface border-b border-border">
+                  <p className="font-medium text-sm text-text font-mono truncate">{group.filename}</p>
+                  <p className="text-xs text-text-muted">{formatFileSize(group.file_size_bytes)} &middot; {group.videos.length} copies</p>
                 </div>
-                <ul className="divide-y">
+                <ul className="divide-y divide-border">
                   {group.videos.map((v) => (
-                    <li key={v.id} className="flex items-center justify-between px-4 py-2.5 bg-white">
+                    <li key={v.id} className="flex items-center justify-between px-4 py-2.5 bg-surface-raised">
                       <div className="min-w-0">
-                        <p className="text-sm text-gray-800 truncate">{v.category || 'Uncategorized'}</p>
-                        <p className="text-xs text-gray-400 font-mono truncate">{v.filepath}</p>
+                        <p className="text-sm text-text truncate">{v.category || 'Uncategorized'}</p>
+                        <p className="text-xs text-text-muted font-mono truncate">{v.filepath}</p>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleDeleteDuplicate(v.id, false)}
-                          className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                          className="px-2 py-1 text-xs border border-border text-text rounded hover:bg-surface"
                           title="Remove from library, keep the file on disk"
                         >
                           Remove
                         </button>
                         <button
                           onClick={() => handleDeleteDuplicate(v.id, true)}
-                          className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50"
+                          className="px-2 py-1 text-xs border border-danger/30 text-danger rounded hover:bg-danger-soft"
                           title="Delete the file from disk"
                         >
                           Delete file

@@ -95,21 +95,21 @@ export default function VideoCard({ video, to, variant, access }: Props) {
         )}
       </div>
       <div className="p-3 space-y-1.5">
-        <p className="font-semibold text-sm text-text line-clamp-2 group-hover:text-accent transition-colors">
+        <p className="font-semibold text-sm text-text line-clamp-2 min-h-[2.5rem] group-hover:text-accent transition-colors">
           {video.title}
         </p>
-        {video.category && (
-          <span className="inline-block max-w-full truncate px-2 py-0.5 rounded-full bg-surface text-text-muted text-xs">
-            {video.category}
-          </span>
-        )}
-        {(video.tags ?? []).length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-0.5">
-            {(video.tags ?? []).slice(0, 3).map((t) => (
-              <TagBadge key={t.id} name={t.name} />
-            ))}
-          </div>
-        )}
+        <div className="min-h-[1.25rem]">
+          {video.category && (
+            <span className="inline-block max-w-full truncate px-2 py-0.5 rounded-full bg-surface text-text-muted text-xs">
+              {video.category}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1 min-h-[1.25rem]">
+          {(video.tags ?? []).slice(0, 3).map((t) => (
+            <TagBadge key={t.id} name={t.name} />
+          ))}
+        </div>
       </div>
     </Link>
   )

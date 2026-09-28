@@ -7,6 +7,7 @@ import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import History from './pages/History'
+import Shares from './pages/Shares'
 import VideoDetail from './pages/VideoDetail'
 import PublicVideoDetail from './pages/PublicVideoDetail'
 import Settings from './pages/Settings'
@@ -18,7 +19,7 @@ function ProtectedLayout() {
   const { token } = useAuthStore()
   if (!token) return <Navigate to="/login" replace />
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-alt">
       <Navbar />
       <Outlet />
     </div>
@@ -51,6 +52,7 @@ export default function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/library" element={<Home />} />
           <Route path="/history" element={<History />} />
+          <Route path="/shares" element={<Shares />} />
           <Route path="/videos/:id" element={<VideoDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route element={<AdminRoute />}>

@@ -1,17 +1,20 @@
 import client from './client'
-import type { DuplicateGroup, Video, VideoPublic, Visibility, WatchHistoryEntry } from '../types'
+import type { DuplicateGroup, Page, Video, VideoPublic, Visibility, WatchHistoryEntry } from '../types'
 
 export const listVideos = (params?: { q?: string; field?: string; visibility?: string; category?: string; sort?: string; skip?: number; limit?: number }) =>
-  client.get<Video[]>('/videos', { params })
+  client.get<Page<Video>>('/videos', { params })
 
 export const listDuplicateVideos = () =>
   client.get<DuplicateGroup[]>('/videos/duplicates')
+
+export const listUnlistedVideos = () =>
+  client.get<Video[]>('/videos/unlisted')
 
 export const updateWatchProgress = (id: string, positionSeconds: number) =>
   client.put(`/videos/${id}/progress`, { position_seconds: positionSeconds })
 
 export const listWatchHistory = (params?: { skip?: number; limit?: number }) =>
-  client.get<WatchHistoryEntry[]>('/videos/history', { params })
+  client.get<Page<WatchHistoryEntry>>('/videos/history', { params })
 
 export const deleteWatchHistoryEntry = (videoId: string) =>
   client.delete(`/videos/history/${videoId}`)
@@ -28,7 +31,7 @@ export const getSharedVideo = (token: string) =>
   client.get<VideoPublic>(`/videos/share/${token}`)
 
 export const listPublicVideos = (params?: { q?: string; category?: string; sort?: string; skip?: number; limit?: number }) =>
-  client.get<VideoPublic[]>('/videos/public', { params })
+  client.get<Page<VideoPublic>>('/videos/public', { params })
 
 export const listPublicCategories = () =>
   client.get<string[]>('/videos/public/categories')

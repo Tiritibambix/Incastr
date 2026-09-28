@@ -4,12 +4,14 @@ import { getCategoryShareVideos } from '../api/categoryShares'
 import type { VideoPublic } from '../types'
 import PublicHeader from '../components/PublicHeader'
 import VideoCard from '../components/VideoCard'
+import Pagination from '../components/Pagination'
 
 const PAGE_SIZE = 16
 
 export default function CategoryShareView() {
   const { token } = useParams<{ token: string }>()
   const [videos, setVideos] = useState<VideoPublic[]>([])
+  const [total, setTotal] = useState(0)
   const [category, setCategory] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -20,8 +22,9 @@ export default function CategoryShareView() {
     setLoading(true)
     try {
       const { data } = await getCategoryShareVideos(token, (pageNum - 1) * PAGE_SIZE, PAGE_SIZE)
-      const list = Array.isArray(data) ? data : []
+      const list = data.items ?? []
       setVideos(list)
+      setTotal(data.total ?? 0)
       if (list[0]?.category) setCategory(list[0].category)
     } catch {
       setError('Link not found or expired')
@@ -80,30 +83,12 @@ export default function CategoryShareView() {
               ))}
             </div>
 
-            {(videos.length === PAGE_SIZE || page > 1) && (
-              <div className="flex items-center justify-center gap-3 mt-8">
-                <button
-                  onClick={() => goToPage(page - 1)}
-                  disabled={page === 1}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm border border-border text-text rounded-lg hover:bg-surface-raised disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Previous
-                </button>
-                <span className="text-sm text-text-muted min-w-[5rem] text-center">Page {page}</span>
-                <button
-                  onClick={() => goToPage(page + 1)}
-                  disabled={videos.length < PAGE_SIZE}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm border border-border text-text rounded-lg hover:bg-surface-raised disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
+            {(total > 0 || page > 1) && (
+              <Pagination
+                page={page}
+                totalPages={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+                onPageChange={goToPage}
+              />
             )}
           </>
         )}

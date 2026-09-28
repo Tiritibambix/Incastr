@@ -10,18 +10,15 @@ import type { CategoryShare, Tag, Video } from '../types'
 import VideoCard from '../components/VideoCard'
 import SearchBar from '../components/SearchBar'
 import SortSelect from '../components/SortSelect'
+import Pagination from '../components/Pagination'
 import { copyToClipboard } from '../utils/clipboard'
-
-function shareStatus(share: CategoryShare): 'active' | 'disabled' | 'expired' {
-  if (!share.enabled) return 'disabled'
-  if (share.expires_at && new Date(share.expires_at) < new Date()) return 'expired'
-  return 'active'
-}
+import { shareStatus } from '../utils/shareStatus'
 
 const PAGE_SIZE = 16
 
 export default function Home() {
   const [videos, setVideos] = useState<Video[]>([])
+  const [total, setTotal] = useState(0)
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -63,7 +60,8 @@ export default function Home() {
       if (q) { params.q = q; if (field) params.field = field }
       if (cat) params.category = cat
       const { data } = await listVideos(params)
-      setVideos(Array.isArray(data) ? data : [])
+      setVideos(data.items ?? [])
+      setTotal(data.total ?? 0)
     } catch {
       setError('Failed to load videos')
     } finally {
@@ -167,15 +165,15 @@ export default function Home() {
     <>
       {/* Fixed sidebar */}
       {hasSidebar && (
-        <aside className="fixed top-12 left-0 bottom-0 w-44 bg-white border-r z-10 overflow-y-auto">
+        <aside className="fixed top-12 left-0 bottom-0 w-44 bg-surface-raised border-r border-border z-10 overflow-y-auto">
           <div className="p-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Library</p>
+            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider px-2 mb-1">Library</p>
             <ul className="space-y-0.5 mb-4">
               <li>
                 <button
                   onClick={() => selectCategory(null)}
                   className={`w-full text-left px-2 py-1.5 rounded-lg text-sm transition-colors ${
-                    !selectedCategory ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                    !selectedCategory ? 'bg-accent-soft text-accent font-medium' : 'text-text-muted hover:bg-surface'
                   }`}
                 >
                   All videos
@@ -183,18 +181,18 @@ export default function Home() {
               </li>
             </ul>
 
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Categories</p>
+            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider px-2 mb-1">Categories</p>
             <ul className="space-y-0.5 mb-4">
               {categories.map(cat => {
                 const share = shares.get(cat)
                 const status = share ? shareStatus(share) : null
                 return (
                   <li key={cat}>
-                    <div className={`flex items-center rounded-lg group ${selectedCategory === cat ? 'bg-indigo-50' : 'hover:bg-gray-100'}`}>
+                    <div className={`flex items-center rounded-lg group ${selectedCategory === cat ? 'bg-accent-soft' : 'hover:bg-surface'}`}>
                       <button
                         onClick={() => selectCategory(cat)}
                         className={`flex-1 text-left px-2 py-1.5 text-sm truncate transition-colors ${
-                          selectedCategory === cat ? 'text-indigo-700 font-medium' : 'text-gray-600'
+                          selectedCategory === cat ? 'text-accent font-medium' : 'text-text-muted'
                         }`}
                         title={cat}
                       >
@@ -205,10 +203,10 @@ export default function Home() {
                         disabled={savingShare && !share}
                         title={share ? 'Manage share' : 'Share category'}
                         className={`flex-shrink-0 mr-1 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 ${
-                          status === 'active' ? 'text-indigo-400 opacity-100'
-                          : status === 'disabled' ? 'text-gray-300 opacity-100'
-                          : status === 'expired' ? 'text-amber-400 opacity-100'
-                          : 'text-gray-300 hover:text-indigo-400'
+                          status === 'active' ? 'text-accent opacity-100'
+                          : status === 'disabled' ? 'text-text-muted opacity-100'
+                          : status === 'expired' ? 'text-warning opacity-100'
+                          : 'text-text-muted hover:text-accent'
                         }`}
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,7 +221,7 @@ export default function Home() {
 
             {availableTags.length > 0 && (
               <>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mb-1">Tags</p>
+                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider px-2 mb-1">Tags</p>
                 <div className="flex flex-wrap gap-1 px-1">
                   {availableTags.map(tag => (
                     <button
@@ -231,8 +229,8 @@ export default function Home() {
                       onClick={() => toggleTag(tag.id)}
                       className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors border ${
                         selectedTags.includes(tag.id)
-                          ? 'bg-indigo-100 text-indigo-700 border-indigo-300'
-                          : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                          ? 'bg-accent-soft text-accent border-accent/30'
+                          : 'bg-surface-raised text-text-muted border-border hover:bg-surface'
                       }`}
                     >
                       #{tag.name}
@@ -262,12 +260,12 @@ export default function Home() {
 
           {loading && (
             <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent" />
             </div>
           )}
-          {error && <p className="text-red-600 text-center py-10">{error}</p>}
+          {error && <p className="text-danger text-center py-10">{error}</p>}
           {!loading && !error && filteredVideos.length === 0 && (
-            <p className="text-gray-500 text-center py-20">
+            <p className="text-text-muted text-center py-20">
               {videos.length === 0
                 ? selectedCategory
                   ? `No videos in "${selectedCategory}".`
@@ -282,34 +280,12 @@ export default function Home() {
           )}
 
           {/* Pagination */}
-          {!loading && !error && (videos.length > 0 || page > 1) && (
-            <div className="flex items-center justify-center gap-3 mt-8">
-              <button
-                onClick={() => goToPage(page - 1)}
-                disabled={page === 1}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Previous
-              </button>
-
-              <span className="text-sm text-gray-500 min-w-[5rem] text-center">
-                Page {page}
-              </span>
-
-              <button
-                onClick={() => goToPage(page + 1)}
-                disabled={videos.length < PAGE_SIZE}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+          {!loading && !error && (total > 0 || page > 1) && (
+            <Pagination
+              page={page}
+              totalPages={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+              onPageChange={goToPage}
+            />
           )}
         </div>
       </div>
@@ -321,15 +297,15 @@ export default function Home() {
           onClick={() => setShareModalCat(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
+            className="bg-surface-raised rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900">{shareModalCat}</h2>
+              <h2 className="font-semibold text-text">{activeShare?.name || shareModalCat}</h2>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                activeStatus === 'active' ? 'bg-green-100 text-green-700'
-                : activeStatus === 'disabled' ? 'bg-gray-100 text-gray-500'
-                : 'bg-amber-100 text-amber-700'
+                activeStatus === 'active' ? 'bg-success-soft text-success'
+                : activeStatus === 'disabled' ? 'bg-surface text-text-muted'
+                : 'bg-warning-soft text-warning'
               }`}>
                 {activeStatus === 'active' ? 'Active' : activeStatus === 'disabled' ? 'Disabled' : 'Expired'}
               </span>
@@ -340,9 +316,9 @@ export default function Home() {
                 onClick={() => handleCopyLink(activeShare)}
                 disabled={activeStatus !== 'active'}
                 className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
-                  justCopied ? 'bg-green-100 text-green-700 border-green-300'
-                  : activeStatus === 'active' ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                  : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                  justCopied ? 'bg-success-soft text-success border-success/30'
+                  : activeStatus === 'active' ? 'bg-accent-soft text-accent border-accent/30 hover:bg-accent-soft/70'
+                  : 'bg-surface text-text-muted border-border cursor-not-allowed'
                 }`}
               >
                 {justCopied
@@ -354,7 +330,7 @@ export default function Home() {
                 onClick={() => handleToggleEnabled(activeShare)}
                 disabled={savingShare}
                 className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
-                  activeShare.enabled ? 'border-gray-300 text-gray-600 hover:bg-gray-50' : 'border-indigo-300 text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                  activeShare.enabled ? 'border-border text-text-muted hover:bg-surface' : 'border-accent/30 text-accent bg-accent-soft hover:bg-accent-soft/70'
                 }`}
               >
                 {activeShare.enabled ? 'Disable' : 'Enable'}
@@ -362,18 +338,18 @@ export default function Home() {
             </div>
 
             <div className="mb-5">
-              <label className="block text-sm text-gray-600 mb-1.5">Expiry date (optional)</label>
+              <label className="block text-sm text-text-muted mb-1.5">Expiry date (optional)</label>
               <input
                 type="datetime-local"
                 value={expiryInputValue(activeShare)}
                 onChange={e => handleSetExpiry(activeShare, e.target.value)}
                 min={new Date().toISOString().slice(0, 16)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
               />
               {activeShare.expires_at && (
                 <button
                   onClick={() => handleSetExpiry(activeShare, '')}
-                  className="mt-1.5 text-xs text-gray-400 hover:text-red-500"
+                  className="mt-1.5 text-xs text-text-muted hover:text-danger"
                 >
                   Clear expiry
                 </button>
@@ -383,13 +359,13 @@ export default function Home() {
             <div className="flex gap-2 justify-between items-center">
               <button
                 onClick={() => handleRevokeShare(activeShare)}
-                className="text-sm text-red-500 hover:text-red-700 transition-colors"
+                className="text-sm text-danger hover:opacity-80 transition-colors"
               >
                 Delete share link
               </button>
               <button
                 onClick={() => setShareModalCat(null)}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm border border-border text-text rounded-lg hover:bg-surface"
               >
                 Close
               </button>

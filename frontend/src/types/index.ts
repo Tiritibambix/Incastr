@@ -48,9 +48,15 @@ export interface Video {
 export interface CategoryShare {
   token: string
   category: string
+  name: string | null
   enabled: boolean
   expires_at: string | null
   created_at: string
+}
+
+export interface Page<T> {
+  items: T[]
+  total: number
 }
 
 export interface DuplicateGroup {

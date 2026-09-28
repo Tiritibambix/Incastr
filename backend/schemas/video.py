@@ -1,9 +1,17 @@
 from datetime import datetime
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
 from backend.models.video import Visibility
 from backend.schemas.tag import TagOut
+
+T = TypeVar("T")
+
+
+class Page(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
 
 
 class VideoUpdate(BaseModel):

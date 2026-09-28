@@ -25,7 +25,7 @@ export default function Description({ text, className = '' }: Props) {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1 text-xs font-medium text-indigo-500 hover:text-indigo-400"
+          className="mt-1 text-xs font-medium text-accent hover:text-accent-hover"
         >
           {expanded ? 'Show less' : 'Show more'}
         </button>

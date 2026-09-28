@@ -29,28 +29,28 @@ export default function PublicVideoDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-400" />
+      <div className="min-h-screen bg-surface-alt flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent" />
       </div>
     )
   }
 
   if (error || !video) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-400">{error || 'Video not found'}</p>
-        <Link to="/" className="text-indigo-400 hover:underline text-sm">← Back</Link>
+      <div className="min-h-screen bg-surface-alt flex flex-col items-center justify-center gap-4">
+        <p className="text-text-muted">{error || 'Video not found'}</p>
+        <Link to="/" className="text-accent hover:underline text-sm">← Back</Link>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-surface-alt">
       <header className="px-6 py-3 flex items-center justify-between">
-        <Link to="/" className="text-indigo-400 font-bold text-lg">Incastr</Link>
+        <Link to="/" className="text-accent font-bold text-lg">Incastr</Link>
         <Link
           to="/login"
-          className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          className="px-4 py-1.5 text-sm bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
         >
           Login
         </Link>
@@ -64,9 +64,9 @@ export default function PublicVideoDetail() {
           catToken={catToken}
         />
         <div className="mt-4">
-          <h1 className="text-xl font-bold text-white">{video.title}</h1>
-          {video.description && <Description text={video.description} className="mt-2 text-gray-400 text-sm" />}
-          {video.category && <p className="mt-1 text-xs text-gray-500">{video.category}</p>}
+          <h1 className="text-xl font-bold text-text">{video.title}</h1>
+          {video.description && <Description text={video.description} className="mt-2 text-text-muted text-sm" />}
+          {video.category && <p className="mt-1 text-xs text-text-muted">{video.category}</p>}
           {(video.tags ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               {(video.tags ?? []).map(t => <TagBadge key={t.id} name={t.name} />)}

@@ -193,7 +193,7 @@ export default function VideoPlayer({ src, mimeType, poster, fill = false, token
               <button
                 type="button"
                 onClick={handleResume}
-                className="px-4 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                className="px-4 py-1.5 text-xs font-medium bg-accent text-white rounded hover:bg-accent-hover transition-colors"
               >
                 Resume
               </button>
@@ -227,7 +227,7 @@ export default function VideoPlayer({ src, mimeType, poster, fill = false, token
                   type="button"
                   onClick={() => { setSpeed(s); setShowSpeedMenu(false) }}
                   className={`block w-full px-3 py-1.5 text-xs text-left whitespace-nowrap transition-colors ${
-                    s === speed ? 'text-indigo-400 font-semibold' : 'text-white hover:bg-white/10'
+                    s === speed ? 'text-accent font-semibold' : 'text-white hover:bg-white/10'
                   }`}
                 >
                   {s}x

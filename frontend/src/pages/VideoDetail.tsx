@@ -136,9 +136,16 @@ export default function VideoDetail() {
     }
   }
 
-  const handleCopyShare = async () => {
+  const handleShareClick = async () => {
     if (!video) return
-    const url = `${window.location.origin}/share/${video.share_token}`
+    let current = video
+    if (current.visibility !== 'unlisted') {
+      const { data } = await updateVideo(current.id, { visibility: 'unlisted' })
+      setVideo(data)
+      setVisibility(data.visibility)
+      current = data
+    }
+    const url = `${window.location.origin}/share/${current.share_token}`
     try {
       await copyToClipboard(url)
       setCopied(true)
@@ -151,12 +158,12 @@ export default function VideoDetail() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent" />
       </div>
     )
   }
-  if (loadError) return <p className="text-center py-20 text-red-600">{loadError}</p>
-  if (!video) return <p className="text-center py-20 text-gray-500">Video not found</p>
+  if (loadError) return <p className="text-center py-20 text-danger">{loadError}</p>
+  if (!video) return <p className="text-center py-20 text-text-muted">Video not found</p>
 
   const unattachedTags = allTags.filter((t) => !(video.tags ?? []).find((vt) => vt.id === t.id))
 
@@ -178,7 +185,7 @@ export default function VideoDetail() {
         </div>
 
         {/* Info panel — fixed width, scrolls independently */}
-        <aside className="md:w-80 lg:w-96 flex-shrink-0 bg-white border-t md:border-t-0 md:border-l overflow-y-auto">
+        <aside className="md:w-80 lg:w-96 flex-shrink-0 bg-surface-raised border-t border-border md:border-t-0 md:border-l overflow-y-auto">
           <div className="p-4 space-y-5">
 
             {editing ? (
@@ -187,68 +194,66 @@ export default function VideoDetail() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full font-bold px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full font-bold px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text"
                 />
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
                   placeholder="Description"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text resize-none"
                 />
                 <select
                   value={visibility}
                   onChange={(e) => setVisibility(e.target.value as Visibility)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text"
                 >
                   {VISIBILITY_OPTIONS.map((v) => (
                     <option key={v} value={v}>{v}</option>
                   ))}
                 </select>
                 <div className="flex gap-2">
-                  <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                  <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-accent text-white text-sm rounded-lg hover:bg-accent-hover disabled:opacity-50">
                     Save
                   </button>
-                  <button onClick={() => setEditing(false)} className="flex-1 py-2 border border-gray-300 text-sm rounded-lg hover:bg-gray-50">
+                  <button onClick={() => setEditing(false)} className="flex-1 py-2 border border-border text-text text-sm rounded-lg hover:bg-surface">
                     Cancel
                   </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
-                <h1 className="font-bold text-gray-900 text-base leading-snug">{video.title}</h1>
+                <h1 className="font-bold text-text text-base leading-snug">{video.title}</h1>
                 {video.description && (
-                  <Description text={video.description} className="text-gray-600 text-sm" />
+                  <Description text={video.description} className="text-text-muted text-sm" />
                 )}
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs text-text-muted">
                   <span className="capitalize">{video.visibility}</span>
                   {video.category && <><span>·</span><span>{video.category}</span></>}
                   {video.is_missing && (
                     <>
                       <span>·</span>
-                      <span className="text-red-600 font-medium">File missing</span>
+                      <span className="text-danger font-medium">File missing</span>
                     </>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50">
+                  <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-xs border border-border text-text rounded-lg hover:bg-surface">
                     Edit
                   </button>
-                  {video.visibility === 'unlisted' && (
-                    <button
-                      onClick={handleCopyShare}
-                      className={`px-3 py-1.5 text-xs rounded-lg border transition-all duration-300 ${
-                        copied
-                          ? 'bg-green-100 text-green-700 border-green-300 scale-105'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {copied ? '✓ Copied!' : 'Share link'}
-                    </button>
-                  )}
+                  <button
+                    onClick={handleShareClick}
+                    className={`px-3 py-1.5 text-xs rounded-lg border transition-all duration-300 ${
+                      copied
+                        ? 'bg-success-soft text-success border-success/30 scale-105'
+                        : 'border-border text-text hover:bg-surface'
+                    }`}
+                  >
+                    {copied ? '✓ Copied!' : 'Share link'}
+                  </button>
                   <button
                     onClick={() => { setDeleteFromDisk(false); setDeleteError(''); setShowDeleteModal(true) }}
-                    className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+                    className="px-3 py-1.5 text-xs border border-danger/30 text-danger rounded-lg hover:bg-danger-soft"
                   >
                     Delete
                   </button>
@@ -257,7 +262,7 @@ export default function VideoDetail() {
             )}
 
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Tags</p>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Tags</p>
               <div className="flex flex-wrap gap-1 mb-3">
                 {(video.tags ?? []).map((t) => (
                   <TagBadge key={t.id} name={t.name} onRemove={() => handleRemoveTag(t.id)} />
@@ -265,7 +270,7 @@ export default function VideoDetail() {
               </div>
               <div className="space-y-2">
                 <select
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-2 py-1.5 bg-surface border border-border rounded-lg text-sm text-text"
                   value=""
                   onChange={(e) => {
                     const tag = allTags.find((t) => t.id === e.target.value)
@@ -283,10 +288,10 @@ export default function VideoDetail() {
                     value={newTagName}
                     onChange={(e) => setNewTagName(e.target.value)}
                     placeholder="New tag"
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                    className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-sm text-text"
                     onKeyDown={(e) => { if (e.key === 'Enter') handleCreateAndAddTag() }}
                   />
-                  <button onClick={handleCreateAndAddTag} className="px-3 py-1.5 bg-gray-100 text-sm rounded-lg hover:bg-gray-200">
+                  <button onClick={handleCreateAndAddTag} className="px-3 py-1.5 bg-surface text-text text-sm rounded-lg hover:bg-surface-alt">
                     Add
                   </button>
                 </div>
@@ -294,19 +299,19 @@ export default function VideoDetail() {
             </div>
 
             {/* ── File management ── */}
-            <div className="border-t pt-4 space-y-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">File</p>
+            <div className="border-t border-border pt-4 space-y-4">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">File</p>
 
               {/* Move to category */}
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Category</label>
+                <label className="block text-xs text-text-muted mb-1">Category</label>
                 <div className="flex gap-2">
                   <input
                     list="category-list"
                     value={movingCategory}
                     onChange={e => setMovingCategory(e.target.value)}
                     placeholder="No category"
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-1 focus:ring-accent"
                   />
                   <datalist id="category-list">
                     {availableCategories.map(c => <option key={c} value={c} />)}
@@ -314,34 +319,34 @@ export default function VideoDetail() {
                   <button
                     onClick={handleMoveCategory}
                     disabled={moving || movingCategory === (video.category ?? '')}
-                    className="px-3 py-1.5 bg-gray-100 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-40"
+                    className="px-3 py-1.5 bg-surface text-text text-sm rounded-lg hover:bg-surface-alt disabled:opacity-40"
                   >
                     {moving ? '…' : 'Move'}
                   </button>
                 </div>
-                {moveError && <p className="mt-1 text-xs text-red-600">{moveError}</p>}
+                {moveError && <p className="mt-1 text-xs text-danger">{moveError}</p>}
               </div>
 
               {/* Rename file */}
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Filename</label>
+                <label className="block text-xs text-text-muted mb-1">Filename</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={newFilename}
                     onChange={e => setNewFilename(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleRenameFile() }}
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="flex-1 px-2 py-1.5 bg-surface border border-border rounded-lg text-sm text-text font-mono focus:outline-none focus:ring-1 focus:ring-accent"
                   />
                   <button
                     onClick={handleRenameFile}
                     disabled={!newFilename.trim() || newFilename === video.filename}
-                    className="px-3 py-1.5 bg-gray-100 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-40"
+                    className="px-3 py-1.5 bg-surface text-text text-sm rounded-lg hover:bg-surface-alt disabled:opacity-40"
                   >
                     Rename
                   </button>
                 </div>
-                {renameError && <p className="mt-1 text-xs text-red-600">{renameError}</p>}
+                {renameError && <p className="mt-1 text-xs text-danger">{renameError}</p>}
               </div>
             </div>
 
@@ -351,29 +356,29 @@ export default function VideoDetail() {
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Delete video</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Remove <span className="font-medium text-gray-700">{video.title}</span> from your library?
+          <div className="bg-surface-raised rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h2 className="text-lg font-semibold text-text mb-1">Delete video</h2>
+            <p className="text-sm text-text-muted mb-4">
+              Remove <span className="font-medium text-text">{video.title}</span> from your library?
             </p>
             <label className="flex items-start gap-3 mb-6 cursor-pointer">
               <input
                 type="checkbox"
                 checked={deleteFromDisk}
                 onChange={(e) => setDeleteFromDisk(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                className="mt-0.5 h-4 w-4 rounded border-border text-danger focus:ring-danger"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-text">
                 Also delete from hard drive.{' '}
-                <span className="text-red-600 font-medium">This can't be undone.</span>
+                <span className="text-danger font-medium">This can't be undone.</span>
               </span>
             </label>
-            {deleteError && <p className="text-sm text-red-600 mb-3">{deleteError}</p>}
+            {deleteError && <p className="text-sm text-danger mb-3">{deleteError}</p>}
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowDeleteModal(false)} disabled={deleting} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+              <button onClick={() => setShowDeleteModal(false)} disabled={deleting} className="px-4 py-2 text-sm border border-border text-text rounded-lg hover:bg-surface disabled:opacity-50">
                 Cancel
               </button>
-              <button onClick={handleDeleteConfirm} disabled={deleting} className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+              <button onClick={handleDeleteConfirm} disabled={deleting} className="px-4 py-2 text-sm bg-danger text-white rounded-lg hover:opacity-90 disabled:opacity-50">
                 {deleting ? 'Deleting…' : 'Delete'}
               </button>
             </div>

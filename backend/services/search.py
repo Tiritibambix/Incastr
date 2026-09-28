@@ -1,4 +1,4 @@
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -17,7 +17,7 @@ async def search_videos(
     sort: str | None = None,
     skip: int = 0,
     limit: int = 50,
-) -> list[Video]:
+) -> tuple[list[Video], int]:
     stmt = (
         select(Video)
         .where(Video.user_id == user_id, ~Video.is_missing)
@@ -54,6 +54,9 @@ async def search_videos(
                 )
             ).distinct()
 
+    count_result = await db.execute(select(func.count()).select_from(stmt.subquery()))
+    total = count_result.scalar_one()
+
     stmt = apply_sort(stmt, sort).offset(skip).limit(limit)
     result = await db.execute(stmt)
-    return list(result.scalars().all())
+    return list(result.scalars().all()), total
