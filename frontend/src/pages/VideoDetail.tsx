@@ -442,6 +442,9 @@ export default function VideoDetail() {
                 {videoShareStatus === 'active' ? 'Active' : videoShareStatus === 'disabled' ? 'Disabled' : 'Expired'}
               </span>
             </div>
+            <p className="text-xs text-text-muted -mt-3 mb-4">
+              Private label, visible only to you. The public page shows &quot;{video.title}&quot;.
+            </p>
 
             <div className="flex gap-2 mb-4">
               <button

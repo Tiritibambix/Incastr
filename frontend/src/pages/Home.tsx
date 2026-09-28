@@ -328,6 +328,9 @@ export default function Home() {
                 {activeStatus === 'active' ? 'Active' : activeStatus === 'disabled' ? 'Disabled' : 'Expired'}
               </span>
             </div>
+            <p className="text-xs text-text-muted -mt-3 mb-4">
+              Private label, visible only to you. The public page shows &quot;{shareModalCat}&quot;.
+            </p>
 
             <div className="flex gap-2 mb-4">
               <button

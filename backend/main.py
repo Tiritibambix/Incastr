@@ -231,7 +231,7 @@ def create_app() -> FastAPI:
             base = str(request.base_url).rstrip("/")
             page = _spa_page_with_meta(
                 index_html,
-                title=video.share_name or video.title,
+                title=video.title,
                 description=video.description,
                 image_url=f"{base}/api/og/video/{token}.jpg",
                 page_url=f"{base}/share/{token}",
@@ -256,7 +256,7 @@ def create_app() -> FastAPI:
             base = str(request.base_url).rstrip("/")
             page = _spa_page_with_meta(
                 index_html,
-                title=share.name or share.category,
+                title=share.category,
                 description=f"A shared video collection: {share.category}",
                 image_url=f"{base}/api/og/category/{token}.jpg",
                 page_url=f"{base}/c/{token}",
