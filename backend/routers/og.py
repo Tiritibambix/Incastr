@@ -15,7 +15,7 @@ from backend.services.thumbnail import generate_og_preview
 router = APIRouter(prefix="/api/og", tags=["og"])
 
 
-@router.get("/video/{share_token}.jpg")
+@router.api_route("/video/{share_token}.jpg", methods=["GET", "HEAD"])
 async def get_video_og_image(share_token: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Video).where(Video.share_token == share_token, Video.visibility == Visibility.unlisted)
@@ -29,7 +29,7 @@ async def get_video_og_image(share_token: str, db: AsyncSession = Depends(get_db
     return FileResponse(str(cache_path), media_type="image/jpeg")
 
 
-@router.get("/category/{token}.jpg")
+@router.api_route("/category/{token}.jpg", methods=["GET", "HEAD"])
 async def get_category_og_image(token: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CategoryShare).where(CategoryShare.token == token))
     share = result.scalar_one_or_none()

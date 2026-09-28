@@ -213,7 +213,7 @@ def create_app() -> FastAPI:
                 async def _serve_static(p=_path):
                     return FileResponse(str(static_dir / p))
 
-        @app.get("/share/{token}")
+        @app.api_route("/share/{token}", methods=["GET", "HEAD"])
         async def share_page_meta(token: str, request: Request):
             from sqlalchemy import select
 
@@ -240,7 +240,7 @@ def create_app() -> FastAPI:
             )
             return HTMLResponse(page)
 
-        @app.get("/c/{token}")
+        @app.api_route("/c/{token}", methods=["GET", "HEAD"])
         async def category_share_page_meta(token: str, request: Request):
             from sqlalchemy import select
 
