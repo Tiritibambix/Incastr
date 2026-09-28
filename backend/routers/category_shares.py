@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,6 +55,7 @@ async def list_shares(
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=CategoryShareOut)
 async def create_or_get_share(
     body: CategoryShareCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -74,6 +75,10 @@ async def create_or_get_share(
         )
         db.add(share)
         await db.flush()
+
+        from backend.routers.og import warm_category_og_preview
+
+        background_tasks.add_task(warm_category_og_preview, current_user.id, body.category, share.token)
     return share
 
 

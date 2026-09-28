@@ -118,19 +118,27 @@ async def _start_watchers():
             start_watcher(folder.user_id, folder.id, folder.path, loop)
 
 
-def _spa_page_with_meta(index_html: str, *, title: str, description: str, image_url: str, page_url: str) -> str:
+def _spa_page_with_meta(
+    index_html: str, *, title: str, description: str | None, image_url: str, page_url: str
+) -> str:
     """Inject Open Graph / Twitter Card meta tags into the SPA's index.html for social-media crawlers.
 
     Real browsers get the identical bundle; React Router takes over on load. Crawlers (WhatsApp,
     iMessage, Facebook, etc.) don't execute JS, so this server-rendered pass is what they see.
     """
     safe_title = html.escape(title)
-    safe_description = html.escape(description)
     safe_image = html.escape(image_url)
     safe_page_url = html.escape(page_url)
+    description_tags = ""
+    if description:
+        safe_description = html.escape(description)
+        description_tags = (
+            f'<meta property="og:description" content="{safe_description}" />\n'
+            f'<meta name="twitter:description" content="{safe_description}" />\n'
+        )
     meta_tags = (
         f'<meta property="og:title" content="{safe_title}" />\n'
-        f'<meta property="og:description" content="{safe_description}" />\n'
+        f"{description_tags}"
         f'<meta property="og:image" content="{safe_image}" />\n'
         f'<meta property="og:image:width" content="1200" />\n'
         f'<meta property="og:image:height" content="630" />\n'
@@ -138,7 +146,6 @@ def _spa_page_with_meta(index_html: str, *, title: str, description: str, image_
         f'<meta property="og:type" content="website" />\n'
         f'<meta name="twitter:card" content="summary_large_image" />\n'
         f'<meta name="twitter:title" content="{safe_title}" />\n'
-        f'<meta name="twitter:description" content="{safe_description}" />\n'
         f'<meta name="twitter:image" content="{safe_image}" />\n'
     )
     return index_html.replace("<title>Incastr</title>", f"<title>{safe_title}</title>\n{meta_tags}")
@@ -227,7 +234,7 @@ def create_app() -> FastAPI:
             page = _spa_page_with_meta(
                 index_html,
                 title=video.title,
-                description=video.description or "Watch this video on Incastr",
+                description=video.description,
                 image_url=f"{base}/api/og/video/{token}.jpg",
                 page_url=f"{base}/share/{token}",
             )

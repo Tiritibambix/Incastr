@@ -3,7 +3,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import func, select
@@ -322,6 +322,7 @@ async def get_video(
 async def update_video(
     video_id: str,
     body: VideoUpdate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -338,7 +339,12 @@ async def update_video(
     if body.description is not None:
         video.description = body.description
     if body.visibility is not None:
+        becomes_unlisted = body.visibility == Visibility.unlisted and video.visibility != Visibility.unlisted
         video.visibility = body.visibility
+        if becomes_unlisted and video.thumbnail_path:
+            from backend.routers.og import warm_video_og_preview
+
+            background_tasks.add_task(warm_video_og_preview, video.thumbnail_path, video.id)
     return video
 
 
