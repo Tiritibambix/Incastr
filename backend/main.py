@@ -85,21 +85,26 @@ async def _bootstrap_media_dir(settings):
         return
 
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(User).where(User.is_admin == True))  # noqa: E712
-        admins = result.scalars().all()
-        for admin in admins:
-            existing = await db.execute(
-                select(Folder).where(Folder.user_id == admin.id, Folder.path == settings.media_dir)
-            )
-            if existing.scalar_one_or_none():
-                continue
-            db.add(Folder(
-                id=str(uuid.uuid4()),
-                user_id=admin.id,
-                path=settings.media_dir,
-                label="Videos",
-            ))
-            logger.info("Auto-configured MEDIA_DIR %s for admin %s", settings.media_dir, admin.username)
+        result = await db.execute(
+            select(User).where(User.is_admin == True).order_by(User.created_at.asc()).limit(1)  # noqa: E712
+        )
+        admin = result.scalar_one_or_none()
+        if not admin:
+            return
+
+        existing = await db.execute(
+            select(Folder).where(Folder.user_id == admin.id, Folder.path == settings.media_dir)
+        )
+        if existing.scalar_one_or_none():
+            return
+
+        db.add(Folder(
+            id=str(uuid.uuid4()),
+            user_id=admin.id,
+            path=settings.media_dir,
+            label="Videos",
+        ))
+        logger.info("Auto-configured MEDIA_DIR %s for admin %s", settings.media_dir, admin.username)
         await db.commit()
 
 

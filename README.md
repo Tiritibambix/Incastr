@@ -111,7 +111,7 @@ Open `http://your-server:8420`, create your account (the first user is automatic
 | Variable | Default | Description |
 |---|---|---|
 | `SECRET_KEY` | **required** | JWT signing key, use a long random string in production |
-| `MEDIA_DIR` | none | Path to auto-register as a video folder for admin accounts on startup |
+| `MEDIA_DIR` | none | Path to auto-register as a video folder for your primary admin account (the earliest one created) on every startup, if not already registered |
 | `THUMBS_DIR` | `/data/thumbs` | Where thumbnails are stored |
 | `SCAN_INTERVAL_MINUTES` | `60` | How often to auto-scan for new files (`0` disables it) |
 | `ALLOW_REGISTRATION` | `true` | Set to `false` to lock down new sign-ups |
