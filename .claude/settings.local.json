@@ -14,7 +14,11 @@
       "Bash(cp /c/Users/Steph/AppData/Local/Temp/claude/C--Users-Steph-Documents-GitHub-Incastr/2287d23f-082d-4b26-b130-229623fe7093/scratchpad/videos.ts /c/Users/Steph/Documents/GitHub/Incastr/frontend/src/api/videos.ts)",
       "Bash(cp /c/Users/Steph/AppData/Local/Temp/claude/C--Users-Steph-Documents-GitHub-Incastr/2287d23f-082d-4b26-b130-229623fe7093/scratchpad/videos_router.py /c/Users/Steph/Documents/GitHub/Incastr/backend/routers/videos.py)",
       "Bash(cp /c/Users/Steph/AppData/Local/Temp/claude/C--Users-Steph-Documents-GitHub-Incastr/2287d23f-082d-4b26-b130-229623fe7093/scratchpad/VideoCard.tsx /c/Users/Steph/Documents/GitHub/Incastr/frontend/src/components/VideoCard.tsx)",
-      "Bash(npm --version)"
+      "Bash(npm --version)",
+      "Bash(mkdir -p docs/screenshots && ls \"C:/Users/Steph/.claude/projects/C--Users-Steph-Documents-GitHub-Incastr/47118dc2-8087-4089-a7aa-a68f9789343e/tool-results/\" | grep blob)",
+      "Bash(cp C:/Users/Steph/.claude/projects/C--Users-Steph-Documents-GitHub-Incastr/47118dc2-8087-4089-a7aa-a68f9789343e/tool-results/mcp-Claude_Browser-blob-1790672120542-5zhrqz.jpg docs/screenshots/library.jpg)",
+      "Bash(cp C:/Users/Steph/.claude/projects/C--Users-Steph-Documents-GitHub-Incastr/47118dc2-8087-4089-a7aa-a68f9789343e/tool-results/mcp-Claude_Browser-blob-1790672138376-np4b8v.jpg docs/screenshots/share-video.jpg)",
+      "Bash(cp C:/Users/Steph/.claude/projects/C--Users-Steph-Documents-GitHub-Incastr/47118dc2-8087-4089-a7aa-a68f9789343e/tool-results/mcp-Claude_Browser-blob-1790672161703-m79axk.jpg docs/screenshots/share-category.jpg)"
     ]
   }
 }

@@ -2,6 +2,8 @@
 
 A self-hosted video library that stays out of your way.
 
+![Incastr library view](docs/screenshots/library.jpg)
+
 ---
 
 > ⚠️ **Security notice**
@@ -53,7 +55,11 @@ With Incastr you get two kinds of shareable links, no account needed on the reci
 
 **Single video.** Click Share on any video. Incastr switches it to *Unlisted* and gives you a link. Anyone with the URL can watch it directly in their browser.
 
+![Sharing a single video](docs/screenshots/share-video.jpg)
+
 **Whole category.** Click the share icon next to any category in your library. Incastr generates a private link to the entire category, showing everyone a clean grid of the videos inside it.
+
+![Sharing a whole category](docs/screenshots/share-category.jpg)
 
 Every share, video or category, can be given a private label so you can tell them apart at a glance, paused and resumed, given an expiry date, or revoked outright. That label is for you only: visitors always see the video's real title or the category's real name, never your internal note. A dedicated **Shares** page lists every active link in one place for managing them later, but you can also name a link the moment you create it, right from the share dialog.
 
