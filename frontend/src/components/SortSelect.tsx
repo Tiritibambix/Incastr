@@ -17,7 +17,7 @@ export default function SortSelect({ value, onChange, className = '' }: Props) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`px-3 py-2 bg-surface-raised border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-accent ${className}`}
+      className={`h-[42px] px-3 py-2 bg-surface-raised border border-border rounded-lg text-text focus:outline-none focus:ring-2 focus:ring-accent ${className}`}
     >
       {SORT_OPTIONS.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>

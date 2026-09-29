@@ -97,7 +97,7 @@ export default function Landing() {
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search…"
-              className="flex-1 px-3 py-2 bg-surface-raised border border-border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+              className="h-[42px] min-h-[42px] flex-1 px-3 py-2 bg-surface-raised border border-border rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
             />
             <SortSelect value={sort} onChange={handleSortChange} />
           </div>
