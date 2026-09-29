@@ -45,6 +45,10 @@ Need to move a video to a different category? Rename a file? You can do all of t
 
 Picked up a video partway through? Incastr remembers where you stopped and offers to resume next time you open it.
 
+Folders, scans, and duplicate detection all live in one settings screen:
+
+![Managing folders and scans in Settings](docs/screenshots/settings.jpg)
+
 ---
 
 ## Sharing without the pain
@@ -62,6 +66,8 @@ With Incastr you get two kinds of shareable links, no account needed on the reci
 ![Sharing a whole category](docs/screenshots/share-category.jpg)
 
 Every share, video or category, can be given a private label so you can tell them apart at a glance, paused and resumed, given an expiry date, or revoked outright. That label is for you only: visitors always see the video's real title or the category's real name, never your internal note. A dedicated **Shares** page lists every active link in one place for managing them later, but you can also name a link the moment you create it, right from the share dialog.
+
+![Managing all your share links in one place](docs/screenshots/shares.jpg)
 
 ---
 
