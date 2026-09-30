@@ -29,6 +29,7 @@ export default function Home() {
   const [searchField, setSearchField] = useState('')
   const [sort, setSort] = useState('date_desc')
   const [shares, setShares] = useState<Map<string, CategoryShare>>(new Map())
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   // Share modal
   const [shareModalCat, setShareModalCat] = useState<string | null>(null)
   const [justCopied, setJustCopied] = useState(false)
@@ -87,6 +88,7 @@ export default function Home() {
   const selectCategory = (cat: string | null) => {
     setSelectedCategory(cat)
     setPage(1)
+    setSidebarOpen(false)
     loadVideos(searchQuery, searchField, cat, 1, sort)
   }
 
@@ -173,10 +175,34 @@ export default function Home() {
 
   return (
     <>
-      {/* Fixed sidebar */}
+      {/* Mobile backdrop, closes the sidebar drawer on outside click */}
+      {hasSidebar && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar: fixed and always visible from md up, a slide-in drawer below that */}
       {hasSidebar && (
-        <aside className="fixed top-12 left-0 bottom-0 w-44 bg-surface-raised border-r border-border z-10 overflow-y-auto">
+        <aside
+          className={`fixed top-12 left-0 bottom-0 w-44 bg-surface-raised border-r border-border z-30 overflow-y-auto transform transition-transform duration-200 md:translate-x-0 ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
           <div className="p-3">
+            <div className="flex items-center justify-between mb-2 md:hidden">
+              <span className="text-sm font-semibold text-text px-2">Categories</span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Close"
+                className="p-1.5 rounded-lg text-text-muted hover:text-accent hover:bg-surface transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <p className="text-xs font-semibold text-text-muted uppercase tracking-wider px-2 mb-1">Library</p>
             <ul className="space-y-0.5 mb-4">
               <li>
@@ -254,8 +280,19 @@ export default function Home() {
       )}
 
       {/* Main content */}
-      <div className={hasSidebar ? 'pl-44' : ''}>
+      <div className={hasSidebar ? 'md:pl-44' : ''}>
         <div className="max-w-6xl mx-auto px-4 py-6">
+          {hasSidebar && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden mb-3 flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-text-muted hover:bg-surface text-sm"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span className="truncate">{selectedCategory ?? 'All videos'}</span>
+            </button>
+          )}
           <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:items-start">
             <div className="flex-1">
               <SearchBar onSearch={(q, field) => {

@@ -150,9 +150,9 @@ export default function Settings() {
       <h1 className="text-2xl font-bold text-text mb-6">Settings</h1>
 
       <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <h2 className="text-lg font-semibold text-text">Video Folders</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={handleRegenerateThumbnails}
               disabled={loading}
@@ -194,12 +194,12 @@ export default function Settings() {
               <li className="px-4 py-3 text-sm text-text-muted">No folders configured</li>
             )}
             {folders.map((f) => (
-              <li key={f.id} className="flex items-center justify-between px-4 py-3 bg-surface-raised">
-                <div>
-                  <p className="font-medium text-sm text-text">{f.label}</p>
-                  <p className="text-xs text-text-muted font-mono">{f.path}</p>
+              <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-surface-raised">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm text-text truncate">{f.label}</p>
+                  <p className="text-xs text-text-muted font-mono truncate">{f.path}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleScanOne(f.id)}
                     disabled={loading}
@@ -219,13 +219,13 @@ export default function Settings() {
           </ul>
         )}
 
-        <form onSubmit={handleAddFolder} className="flex gap-2">
+        <form onSubmit={handleAddFolder} className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             placeholder="Label"
-            className="w-32 px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full sm:w-32 px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <input
             type="text"

@@ -136,8 +136,8 @@ export default function Admin() {
         </form>
       )}
 
-      <div className="border border-border rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border border-border rounded-lg overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
           <thead className="bg-surface border-b border-border">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-text-muted">Username</th>
