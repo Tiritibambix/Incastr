@@ -22,13 +22,13 @@ export default function SearchBar({ onSearch }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="flex flex-wrap gap-2">
       <input
         type="text"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search videos..."
-        className="h-[42px] flex-1 px-3 py-2 bg-surface-raised border border-border rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+        className="h-[42px] flex-1 min-w-[140px] px-3 py-2 bg-surface-raised border border-border rounded-lg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
       />
       <select
         value={field}
